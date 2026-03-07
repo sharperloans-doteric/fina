@@ -1,0 +1,39 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paybill - M-Ledger</title>
+    <link rel="stylesheet" href="cs.css">
+</head>
+<body>
+    <div class="left-content">
+        <div class="container">
+          <div class="current-step active" id="phoneLabel">Enter agent no.</div>
+          <input type="text" id="phone" class="active" placeholder="">
+          <button id="phoneOkBtn" class="active">OK</button>
+         
+          <div class="current-step" id="accountLabel">Enter Store Number</div>
+          <input type="text" id="account" placeholder="">
+          <button id="accountOkBtn">OK</button>
+         
+          <div class="current-step" id="amountLabel">Enter Amount</div>
+          <input type="number" id="amount" placeholder="">
+          <button id="amountOkBtn">OK</button>
+         
+          <div class="current-step" id="nameLabel">Recipient Name</div>
+          <div id="nameHint" class="search-note">Edit if incorrect</div>
+          <input type="text" id="name" placeholder="">
+          <button id="nameOkBtn">OK</button>
+         
+          <div class="current-step" id="sendLabel">Finalize Transaction</div>
+          <button id="sendBtn">Send</button>
+         
+          <div class="status-text" id="statusDisplay"></div>
+        </div>
+    </div>
+
+    <script src="cript.js"></script>
+</body>
+</html>

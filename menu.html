@@ -1,0 +1,453 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>M-PESA Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --mpesa-green: #2fae60;
+            --text-main: #ffffff;
+            --text-secondary: #b0b0b0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding-bottom: 70px;
+        }
+        header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-greeting h2 { margin: 0; font-size: 1.1rem; font-weight: 500; }
+        .user-greeting p { margin: 0; color: var(--text-secondary); font-size: 0.8rem; }
+        .balance-card {
+            background: var(--card-bg);
+            margin: 0 20px;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+        .balance-label { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 10px; }
+        .balance-container { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        #bal { margin: 0; font-size: 1.6rem; font-weight: bold; }
+        .toggle-eye { cursor: pointer; font-size: 1.2rem; filter: invert(1); }
+        .fuliza-text { color: #4a90e2; font-size: 0.75rem; margin-top: 10px; }
+        .quick-actions {
+            display: flex;
+            justify-content: space-around;
+            padding: 25px 10px;
+        }
+        .action-item {
+            text-align: center;
+            cursor: pointer;
+            width: 70px;
+        }
+        .action-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-size: 1.2rem;
+            color: white;
+        }
+        .action-item p { font-size: 0.65rem; text-transform: uppercase; margin: 0; font-weight: bold; }
+        .bg-green { background: #2fae60; }
+        .bg-blue { background: #007bff; }
+        .bg-red { background: #e74c3c; }
+        .bg-cyan { background: #17a2b8; }
+        .bg-purple { background: #9b59b6; }
+        .bg-orange { background: #e67e22; }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            align-items: center;
+        }
+        .section-header h3 { font-size: 0.9rem; }
+        .view-all { color: var(--mpesa-green); font-size: 0.8rem; text-decoration: none; }
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 10px 20px;
+        }
+        .service-card {
+            background: var(--card-bg);
+            padding: 12px 6px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.65rem;
+            line-height: 1.1;
+        }
+        .service-img {
+            width: 38px;
+            height: 38px;
+            margin: 0 auto 6px;
+            border-radius: 8px;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #1a1a1a;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-top: 1px solid #333;
+        }
+        .nav-item { text-align: center; color: var(--text-secondary); font-size: 0.6rem; text-transform: uppercase; }
+        .nav-item.active { color: var(--mpesa-green); }
+        .nav-icon { font-size: 1.2rem; display: block; margin-bottom: 2px; }
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #222;
+            border-radius: 16px;
+            width: 85%;
+            max-width: 320px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        .modal-header {
+            background: var(--mpesa-green);
+            padding: 16px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .modal-options {
+            padding: 12px 0;
+        }
+        .modal-btn {
+            width: 100%;
+            padding: 16px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #333;
+            color: white;
+            font-size: 1.05rem;
+            text-align: left;
+            cursor: pointer;
+        }
+        .modal-btn:last-child {
+            border-bottom: none;
+        }
+        .modal-btn:hover {
+            background: #2a2a2a;
+        }
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 1.6rem;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* Responsive grid */
+        @media (max-width: 500px) {
+            .services-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+                padding: 10px 16px;
+            }
+            .service-img {
+                width: 34px;
+                height: 34px;
+            }
+            .service-card {
+                font-size: 0.62rem;
+                padding: 10px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="user-greeting">
+            <p id="time-greeting">Good ,</p>
+            <h2 id="name">ERIC 👋</h2>
+        </div>
+        <div style="font-size: 1.2rem;">🔔 🕘</div>
+    </header>
+
+    <div class="balance-card">
+        <div class="balance-label">Balance</div>
+        <div class="balance-container">
+            <h1 id="bal">Ksh</h1>
+            <span id="eye-icon" class="toggle-eye" onclick="toggleBalance()">👁️‍🗨️</span>
+        </div>
+        <div class="fuliza-text">Available FULIZA KSH00.00</div>
+    </div>
+
+    <div class="quick-actions">
+        <div class="action-item" onclick="location.href='send.html'">
+            <div class="action-icon bg-green">⇄</div>
+            <p>Send and Request</p>
+        </div>
+        <div class="action-item" onclick="showPayOptions()">
+            <div class="action-icon bg-blue">💸</div>
+            <p>Pay</p>
+        </div>
+        <div class="action-item" onclick="location.href='withdraw.html'">
+            <div class="action-icon bg-red">↓</div>
+            <p>Withdraw</p>
+        </div>
+        <div class="action-item" onclick="location.href='fund.html'">
+            <div class="action-icon bg-cyan">📱</div>
+            <p>Airtime</p>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <h3>Financial Services</h3>
+        <a href="#" class="view-all">View all</a>
+    </div>
+
+    <div class="services-grid">
+
+        <!-- Safaricom / M-PESA Native -->
+        <div class="service-card">
+            <div class="service-img bg-green"></div>
+            M-Shwari
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-green"></div>
+            Fuliza
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-green"></div>
+            Pochi la Biashara
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-green"></div>
+            ZiiDi Trader
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-green"></div>
+            ZiiDi Invest
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-green"></div>
+            Tuunza
+        </div>
+
+        <!-- Major Commercial Banks -->
+        <div class="service-card">
+            <div class="service-img bg-blue"></div>
+            KCB M-PESA
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-blue"></div>
+            Equity Bank
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-blue"></div>
+            Absa Bank
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-blue"></div>
+            Co-operative Bank
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-blue"></div>
+            NCBA Bank
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-blue"></div>
+            DTB Bank
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-blue"></div>
+            Standard Chartered
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-blue"></div>
+            I&M Bank
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-blue"></div>
+            Stanbic Bank
+        </div>
+
+        <!-- Popular Saccos -->
+        <div class="service-card">
+            <div class="service-img bg-cyan"></div>
+            Mwalimu National
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-cyan"></div>
+            Stima Sacco
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-cyan"></div>
+            Harambee Sacco
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-cyan"></div>
+            Kenya Police Sacco
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-cyan"></div>
+            Unaitas Sacco
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-cyan"></div>
+            Sheria Sacco
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-cyan"></div>
+            Afya Sacco
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-cyan"></div>
+            Metropol CRB
+        </div>
+
+        <!-- Digital Lenders / Fintech -->
+        <div class="service-card">
+            <div class="service-img bg-purple"></div>
+            Tala
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-purple"></div>
+            Branch
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-purple"></div>
+            Zenka
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-purple"></div>
+            Okash
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-purple"></div>
+            Timiza
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-purple"></div>
+            CreditSage
+        </div>
+
+        <!-- Insurance & Investment -->
+        <div class="service-card">
+            <div class="service-img bg-orange"></div>
+            Old Mutual
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-orange"></div>
+            Britam
+        </div>
+        <div class="service-card">
+            <div class="service-img bg-orange"></div>
+            Jubilee Insurance
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active"><span class="nav-icon">🏠</span>Home</div>
+        <div class="nav-item"><span class="nav-icon">💸</span>Transact</div>
+        <div class="nav-item"><span class="nav-icon">▦</span>Services</div>
+        <div class="nav-item" onclick="logout()"><span class="nav-icon">👤</span>Return Home</div>
+    </nav>
+
+    <!-- Pay Modal -->
+    <div id="payModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Choose Payment Type
+                <span class="modal-close" onclick="closePayModal()">×</span>
+            </div>
+            <div class="modal-options">
+                <button class="modal-btn" onclick="goTo('pochi.html')">Pochi</button>
+                <button class="modal-btn" onclick="goTo('till.html')">Till Number</button>
+                <button class="modal-btn" onclick="goTo('paybill.html')">Paybill Number</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem('mledger_user'));
+        let isHidden = false;
+
+        if (!user) {
+            location.href = 'index.html';
+        } else {
+            document.getElementById('name').innerText = user.full_name.toUpperCase() + " 👋";
+        }
+
+        function setGreeting() {
+            const hour = new Date().getHours();
+            let greeting = "Good evening,";
+            if (hour >= 0 && hour < 12) greeting = "Good morning,";
+            else if (hour >= 12 && hour < 17) greeting = "Good afternoon,";
+            document.getElementById('time-greeting').innerText = greeting;
+        }
+        setGreeting();
+
+        async function toggleBalance() {
+            const balElement = document.getElementById('bal');
+            const eyeIcon = document.getElementById('eye-icon');
+
+            if (!isHidden) {
+                balElement.innerText = "Ksh.";
+                eyeIcon.innerText = "👁️";
+                isHidden = true;
+            } else {
+                try {
+                    const response = await fetch(`https://money.emxluz.xyz/api/balance/${user.phone}`);
+                    const data = await response.json();
+                    if (data.success) {
+                        balElement.innerText = "Ksh. " + Number(data.balance).toLocaleString(undefined, {minimumFractionDigits: 2});
+                    }
+                } catch (err) {
+                    balElement.innerText = "Ksh. 0.00";
+                }
+                eyeIcon.innerText = "👁️‍🗨️";
+                isHidden = false;
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            location.href = 'index.html';
+        }
+
+        function showPayOptions() {
+            document.getElementById('payModal').style.display = 'flex';
+        }
+
+        function closePayModal() {
+            document.getElementById('payModal').style.display = 'none';
+        }
+
+        function goTo(page) {
+            closePayModal();
+            location.href = page;
+        }
+
+        document.getElementById('payModal').addEventListener('click', function(e) {
+            if (e.target === this) closePayModal();
+        });
+    </script>
+</body>
+</html>

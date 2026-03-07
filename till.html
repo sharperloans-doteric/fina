@@ -1,0 +1,35 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy Goods - M-Ledger</title>
+    <link rel="stylesheet" href="le.css">
+</head>
+<body>
+<div class="left-content">
+  <div class="container">
+    <div class="current-step active" id="phoneLabel">Enter till no.</div>
+    <input type="text" id="phone" class="active" placeholder="">
+    <button id="phoneOkBtn" class="active">OK</button>
+   
+    <div class="current-step" id="amountLabel">Enter Amount</div>
+    <input type="number" id="amount" placeholder="Ksh">
+    <button id="amountOkBtn">OK</button>
+   
+    <div class="current-step" id="nameLabel">Enter Full Name</div>
+    <div id="editNote" class="search-note">Confirm Name (Edit if incorrect)</div>
+    <input type="text" id="name" placeholder="Full name">
+    <button id="nameOkBtn">OK</button>
+   
+    <div class="current-step" id="optionsLabel">Finalize Transaction</div>
+    <button id="sendBtn">Confirm & Send</button>
+   
+    <div class="status-text" id="statusDisplay"></div>
+  </div>
+</div>
+
+<script src="pt.js"></script>
+</body>
+</html>

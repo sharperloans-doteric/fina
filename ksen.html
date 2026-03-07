@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>M-Ledger Login & Security</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Link to CSS -->
+    <link rel="stylesheet" href="csss.css">
+</head>
+<body>
+
+    <div id="biometricOverlay">
+        <div class="bio-card">
+            <div class="bio-icon">☝️</div>
+            <h3>Enable M-ledger robot login!</h3>
+            <p class="info">Would you like to login with M-ledger robot for faster logins next time?</p>
+            <div id="bioMsg"></div>
+            <button id="enrollBtn" onclick="enrollBiometrics()">Enable Now</button>
+            <p class="link" onclick="closeBioOverlay()">Not Now</p>
+        </div>
+    </div>
+
+    <div class="box">
+        <div id="loginSection">
+            <h2>M-Ledger Login</h2>
+            <p class="info">Use your Safaricom number for easy assistance.</p>
+            <input id="lPhone" placeholder="Phone Number" type="tel">
+            <input id="lPass" type="password" placeholder="PIN/Password">
+            <button id="lBtn" onclick="login()">Login</button>
+            
+            <button id="quickBioBtn" onclick="loginWithBiometrics()">
+                <span>☝️</span> Login with M-ledger robot
+            </button>
+            
+            <p id="disableBioLink" class="link" style="display:none; color: #ff5252; text-decoration: none; font-size: 12px;" onclick="disableBiometrics()">
+                Disable M-ledger robot
+            </p>
+
+            <p class="link" onclick="showSection('regSection')">Don't have an account? Register</p>
+            <p class="link" style="color: #ffab00;" onclick="showSection('resetSection')">Forgot PIN / Change Password?</p>
+        </div>
+
+        <div id="choiceSection" style="display:none">
+            <h2>Welcome Back!</h2>
+            <p class="info">How would you like to continue?</p>
+            <button onclick="goTo('menu.html')">Continue with App</button>
+            <button onclick="goTo('act.html')">Continue with SIM Toolkit</button>
+            <p style="font-size: 12px; margin-top: 15px; line-height: 1.5;"> 
+                🏝️ Offer! Funding fee reduced to 4%. Fund 1000 bob today and get 500 bonus instantly!
+            </p>
+        </div>
+        
+        <div id="regSection" style="display:none">
+            <h2>Create Account</h2>
+            <input id="rName" placeholder="Full Name">
+            <input id="rPhone" placeholder="Safaricom Phone Number" type="tel">
+            <input id="rPass" type="password" placeholder="Set PIN/Password">
+            <select id="referralChoice" onchange="toggleReferralInput()">
+                <option value="no">No Referral</option>
+                <option value="yes">Has been Referred</option>
+            </select>
+            <input id="rReferrer" placeholder="Referrer's Phone Number" type="tel" style="display:none;">
+            <button id="rBtn" onclick="register()">Register</button>
+            <p class="link" onclick="showSection('loginSection')">Back to Login</p>
+        </div>
+
+        <div id="resetSection" style="display:none">
+            <h2>Reset PIN</h2>
+            <p class="info">A <strong>Ksh 10.00</strong> verification fee is required.</p>
+            <input id="resetPhone" placeholder="Registered Phone Number" type="tel">
+            <input id="resetPass" type="password" placeholder="Enter New PIN">
+            <button id="resetBtn" onclick="changePin()">Verify & Update PIN</button>
+            <p class="link" onclick="showSection('loginSection')">Back to Login</p>
+        </div>
+
+        <p id="status"></p>
+    </div>
+
+    <!-- Link to JS -->
+    <script src="sciript.js"></script>
+</body>
+</html>

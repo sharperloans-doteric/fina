@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SIM ToolKit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000000;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: clamp(16px, 4.2vw, 20px);
+            line-height: 1.5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            flex: 1;
+            padding: clamp(30px, 8vw, 60px) clamp(16px, 5vw, 30px) clamp(20px, 6vw, 40px);
+            text-align: left;
+        }
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .menu-item {
+            padding: clamp(14px, 4vw, 22px) 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        .menu-item:hover,
+        .menu-item:active {
+            background: #111111;
+        }
+        .menu-item.special {
+            color: #ffffff;
+        }
+
+        /* Lipa sub-menu modal */
+        #lipaModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 10;
+            align-items: flex-start;
+            justify-content: flex-start;
+            padding: clamp(40px, 10vw, 80px) clamp(16px, 5vw, 30px) 0;
+        }
+        .sub-content {
+            background: #000000;
+            border: 1px solid #222222;
+            width: 100%;
+            max-width: 380px;
+            padding: clamp(20px, 6vw, 28px) clamp(14px, 4vw, 20px);
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        .sub-title {
+            color: #ffffff;
+            font-weight: bold;
+            margin-bottom: clamp(16px, 5vw, 24px);
+            font-size: clamp(16px, 4.2vw, 20px);
+        }
+        .sub-item {
+            padding: clamp(14px, 4vw, 20px) 0;
+            cursor: pointer;
+        }
+        .sub-item:hover {
+            background: #111111;
+        }
+
+        @media (min-width: 768px) {
+            body {
+                font-size: 22px;
+            }
+            .container {
+                max-width: 500px;
+                margin: 0;
+            }
+            .sub-content {
+                max-width: 420px;
+            }
+            #lipaModal {
+                padding-left: clamp(20px, 8vw, 100px);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <ul class="menu-list">
+            <li class="menu-item">SIM ToolKit</li>
+            <li class="menu-item" onclick="location.href='send.html'">Send Money</li>
+            <li class="menu-item" onclick="location.href='withdraw.html'">Withdraw Cash</li>
+            <li class="menu-item" onclick="location.href='fund.html'">Buy Airtime</li>
+            <li class="menu-item">Loans and Savings</li>
+            <li class="menu-item" onclick="showLipaOptions()">Lipa na M-PESA</li>
+            <li class="menu-item special" id="myaccount">My Account</li>
+        </ul>
+    </div>
+
+    <!-- Lipa na M-PESA sub-menu -->
+    <div id="lipaModal">
+        <div class="sub-content">
+            <div class="sub-title">Lipa na M-PESA</div>
+            <div class="sub-item" onclick="goTo('paybill.html')">Paybill Number</div>
+            <div class="sub-item" onclick="goTo('till.html')">Till Number</div>
+            <div class="sub-item" onclick="goTo('pochi.html')">Pochi la Biashara</div>
+        </div>
+    </div>
+
+    <script>
+        // Single click for My Account
+        document.getElementById('myaccount').addEventListener('click', function() {
+            location.href = 'se.html'; // <-- now opens se.html on single click
+        });
+
+        function showLipaOptions() {
+            document.getElementById('lipaModal').style.display = 'flex';
+        }
+
+        function goTo(page) {
+            document.getElementById('lipaModal').style.display = 'none';
+            location.href = page;
+        }
+
+        document.getElementById('lipaModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    </script>
+
+</body>
+</html>

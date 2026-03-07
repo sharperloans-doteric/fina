@@ -1,0 +1,28 @@
+:root { --primary: #4CAF50; --dark: #0f0f0f; --card: #1a1a1a; }
+body { font-family: system-ui, -apple-system, sans-serif; background: var(--dark); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+.box { width: 100%; max-width: 400px; background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; }
+input, select { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: var(--primary); box-sizing: border-box; font-size: 16px; }
+input:focus, select:focus { outline: none; border-color: var(--primary); }
+button { width: 100%; padding: 15px; border-radius: 10px; border: none; background: var(--primary); color: white; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; margin-top: 10px; }
+button:disabled { background: #2e5d30; color: #888; cursor: not-allowed; }
+.link { text-align: center; margin-top: 15px; color: #888; cursor: pointer; text-decoration: underline; font-size: 14px; }
+h2 { text-align: center; margin-top: 0; color: var(--primary); }
+p.info { text-align: center; font-size: 13px; color: #aaa; margin-bottom: 20px; }
+#status { text-align: center; margin-top: 15px; font-weight: 500; min-height: 40px; font-size: 14px; }
+
+/* Biometric Prompt Styles */
+#biometricOverlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9); z-index: 100; justify-content: center; align-items: center;
+}
+.bio-card { background: var(--card); padding: 30px; border-radius: 25px; text-align: center; width: 80%; max-width: 320px; border: 1px solid #333; }
+.bio-icon { font-size: 50px; color: var(--primary); margin-bottom: 20px; }
+#bioMsg { font-size: 14px; margin-top: 10px; min-height: 20px; }
+
+#quickBioBtn { 
+    background: none; border: 1px solid var(--primary); color: var(--primary); 
+    margin-top: 20px; display: none; align-items: center; justify-content: center; gap: 10px;
+}
+
+.loader { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s linear infinite; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }

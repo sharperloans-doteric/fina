@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fund Account - Pay Fee Only</title>
+    <link rel="stylesheet" href="fuc.css">
+</head>
+<body>
+
+<div class="card">
+    <h2>Fund Your Account</h2>
+    <div class="user-info">Crediting Account: <span id="accPhone" style="color:var(--primary)">...</span></div>
+    
+    <label>Amount to Add to Balance (Ksh)</label>
+    <input type="number" id="fundAmount" placeholder="Min 100" oninput="updateFee()">
+    
+    <div id="feeDisplay" class="fee-info">
+        Service Fee to Pay: <strong id="stkPrice">Ksh 0.00</strong>
+    </div>
+
+    <label>Enter M-Pesa Number for Payment with Funds (Safaricom only)</label>
+    <input type="text" id="paymentPhone" placeholder="07xxxxxxxx">
+    
+    <button id="payBtn" onclick="initiateFunding()">Pay Fee & Request Funds</button>
+    
+    <div id="status"></div>
+    <a href="act.html" class="back-link">Go Back</a>
+</div>
+
+<script src="fu.js"></script>
+</body>
+</html>
