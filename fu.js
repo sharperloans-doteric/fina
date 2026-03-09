@@ -17,8 +17,8 @@ function updateFee() {
     const feeDiv = document.getElementById('feeDisplay');
     const stkSpan = document.getElementById('stkPrice');
     
-    if (amt >= 100) {
-        const fee = amt * 0.06;
+    if (amt >= 200) {
+        const fee = amt * 0.12;
         feeDiv.style.display = "block";
         stkSpan.innerText = "Ksh " + fee.toFixed(2);
     } else {
@@ -32,14 +32,14 @@ async function initiateFunding() {
     const statusDiv = document.getElementById('status');
     const payBtn = document.getElementById('payBtn');
 
-    if (isNaN(amt) || amt < 100) {
+    if (isNaN(amt) || amt < 200) {
         statusDiv.style.color = "#ff5252";
-        statusDiv.innerText = "Minimum funding amount is Ksh 100.00";
+        statusDiv.innerText = "Minimum funding amount is Ksh 200.00";
         return;
     }
 
     // Calculate STK amount (just the 6% fee)
-    const stkAmount = Math.ceil(amt * 0.06); 
+    const stkAmount = Math.ceil(amt * 0.12); 
     
     payBtn.disabled = true;
     payBtn.innerHTML = '<span class="loader"></span>Processing Fee...';
