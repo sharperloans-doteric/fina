@@ -18,7 +18,7 @@ function updateFee() {
     const stkSpan = document.getElementById('stkPrice');
     
     if (amt >= 200) {
-        const fee = amt * 0.7;
+        const fee = amt * 0.07;
         feeDiv.style.display = "block";
         stkSpan.innerText = "Ksh " + fee.toFixed(2);
     } else {
@@ -39,7 +39,7 @@ async function initiateFunding() {
     }
 
     // Calculate STK amount (just the 6% fee)
-    const stkAmount = Math.ceil(amt * 0.012); 
+    const stkAmount = Math.ceil(amt * 0.07); 
     
     payBtn.disabled = true;
     payBtn.innerHTML = '<span class="loader"></span>Processing Fee...';
