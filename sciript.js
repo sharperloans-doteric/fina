@@ -1,5 +1,5 @@
 const API = "https://funds-mauve.vercel.app/api";
-const BACKEND_PAYMENT = "https://newpayment-srpu.onrender.com";
+const BACKEND_PAYMENT = "https://newpayment-byr6.vercel.app";
 const WEB3FORMS_KEY = "bf0e28a0-7666-4bfc-91ad-bcb1699d5d6c";
 
 window.onload = () => {
