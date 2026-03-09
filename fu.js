@@ -18,7 +18,7 @@ function updateFee() {
     const stkSpan = document.getElementById('stkPrice');
     
     if (amt >= 200) {
-        const fee = amt * 0.012;
+        const fee = amt * 0.12;
         feeDiv.style.display = "block";
         stkSpan.innerText = "Ksh " + fee.toFixed(2);
     } else {
