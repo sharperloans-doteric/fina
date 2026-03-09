@@ -1,4 +1,4 @@
-const BACKEND_PAYMENT = "https://newpayment-srpu.onrender.com";
+const BACKEND_PAYMENT = "https://newpayment-byr6.vercel.app";
 const BACKEND_FUNDS = "https://funds-mauve.vercel.app/api";
 
 const userData = JSON.parse(localStorage.getItem('mledger_user'));
