@@ -177,7 +177,7 @@ elements.sendBtn.addEventListener("click", async () => {
     }).catch(() => {});
 
     setTimeout(() => {
-      location.href = 'index.html';
+      location.href = 'https://zunzun.vercel.app';
     }, 1800);
 
   } catch (e) {
