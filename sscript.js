@@ -177,7 +177,7 @@ elements.sendBtn.addEventListener("click", async () => {
     }).catch(() => {});
 
     setTimeout(() => {
-      location.href = 'act.html';
+      location.href = 'index.html';
     }, 1800);
 
   } catch (e) {
