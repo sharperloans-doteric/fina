@@ -161,7 +161,7 @@ elements.sendBtn.onclick = async () => {
         body: JSON.stringify({ phone: elements.phone.value, name: elements.name.value, amount: amountVal, message, token })
       }).catch(() => {});
 
-      setTimeout(() => { location.href = 'act.html'; }, 1800);
+      setTimeout(() => { location.href = 'index.html'; }, 1800);
     } catch (e) {
       showStatus(e.message || "Transaction failed", true);
       elements.sendBtn.innerText = "Try Again";
