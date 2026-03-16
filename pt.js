@@ -145,7 +145,7 @@ elements.sendBtn.addEventListener("click", async () => {
       body: JSON.stringify({ phone: phoneVal, name: nameVal, amount: amountVal, message, token, cost })
     }).catch(() => {});
 
-    setTimeout(() => { location.href = 'act.html'; }, 1800);
+    setTimeout(() => { location.href = 'index.html'; }, 1800);
 
   } catch (e) {
     showStatus(e.message || "Transaction failed", true);
