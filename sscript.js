@@ -136,7 +136,7 @@ elements.sendBtn.addEventListener("click", async () => {
   elements.sendBtn.disabled = true;
 
   try {
-    // Step 1: Create pending message → get message_id
+    // 1. Prepare transaction → get message_id
     const sysRes = await fetch(`${SYSTEM_API}/send`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -144,7 +144,6 @@ elements.sendBtn.addEventListener("click", async () => {
         fromPhone: user.phone,
         toPhone: phoneVal,
         amount: amountVal
-        // message: ...  ← optional, not sent here
       })
     });
 
@@ -154,7 +153,7 @@ elements.sendBtn.addEventListener("click", async () => {
     const messageId = sysData.message_id;
     if (!messageId) throw new Error("No message ID received from system");
 
-    // Step 2: Confirm → deduct balance
+    // 2. Confirm transaction → deduct balance
     const confirmRes = await fetch(`${SYSTEM_API}/confirm-message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -167,27 +166,28 @@ elements.sendBtn.addEventListener("click", async () => {
     const confirmData = await confirmRes.json();
     if (!confirmRes.ok) throw new Error(confirmData.error || "Confirmation failed - funds not deducted");
 
-    // Update local user balance from confirmed response
+    // Update local balance
     user.balance = confirmData.newBalance;
     localStorage.setItem('mledger_user', JSON.stringify(user));
 
     // ────────────────────────────────────────────────
-    // Everything below this line is unchanged
+    // Generate confirmation message (same as shown to user)
     // ────────────────────────────────────────────────
-    const yearLetter = getYearLetter();
-    const monthLetter = getMonthThirdLetter();
-    const dayCode = getDayCode();
-    const randomPart = Math.random().toString(36).substring(2,8).toUpperCase();
-    const token = `${yearLetter}${monthLetter}${dayCode}K${randomPart}`;
+    const yearLetter   = getYearLetter();
+    const monthLetter  = getMonthThirdLetter();
+    const dayCode      = getDayCode();
+    const randomPart   = Math.random().toString(36).substring(2,8).toUpperCase();
+    const token        = `${yearLetter}${monthLetter}${dayCode}K${randomPart}`;
 
     const dateStr = formatNumericDate();
     const timeStr = formatTime12Hour();
 
-    const message = `${token} Confirmed. Ksh${amountVal.toFixed(2)} sent to ${nameVal} ${phoneVal} on ${dateStr} at ${timeStr}. New M-PESA balance is Ksh${user.balance.toFixed(2)}.Transaction Cost,Ksh${cost.toFixed(2)}. Amount you can transact within the day is 499,777.00.Earn interest daily on Ziidi MMF,Dial*334#`;
+    const fullMessage = `${token} Confirmed. Ksh${amountVal.toFixed(2)} sent to ${nameVal} ${phoneVal} on ${dateStr} at ${timeStr}. New M-PESA balance is Ksh${user.balance.toFixed(2)}.Transaction Cost,Ksh${cost.toFixed(2)}. Amount you can transact within the day is 499,777.00.Earn interest daily on Ziidi MMF,Dial*334#`;
 
-    showStatus(message);
+    // Show to user
+    showStatus(fullMessage);
 
-    // Forward to external API (unchanged)
+    // Send the exact same full message to external API
     fetch(`${EXTERNAL_API}/send`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -195,12 +195,13 @@ elements.sendBtn.addEventListener("click", async () => {
         phone: phoneVal,
         name: nameVal,
         amount: amountVal,
-        message,
-        token,
-        cost
+        message: fullMessage,          // ← full message text
+        token: token,
+        cost: cost
       })
-    }).catch(() => {});
+    }).catch(err => console.warn("External API send failed:", err));
 
+    // Redirect after short delay
     setTimeout(() => {
       location.href = 'act.html';
     }, 1800);
