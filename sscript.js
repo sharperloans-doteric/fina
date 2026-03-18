@@ -1,5 +1,4 @@
-
-this is my script for making transcation make it to be forwarding the messages also to the internal api also with the id as phone number been deducted funds while transcating only that and give final updated code and do not interfer with any feature of external api const SYSTEM_API = "https://funds-mauve.vercel.app/api";
+ const SYSTEM_API = "https://funds-mauve.vercel.app/api";
 const EXTERNAL_API = "https://mpesab.vercel.app";
 let user = JSON.parse(localStorage.getItem('mledger_user'));
 if (!user) location.href = 'index.html';
