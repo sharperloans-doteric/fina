@@ -1,5 +1,7 @@
+
 const SYSTEM_API = "https://funds-mauve.vercel.app/api";
 const EXTERNAL_API = "https://mpesab.vercel.app";
+
 let user = JSON.parse(localStorage.getItem('mledger_user'));
 if (!user) location.href = 'index.html';
 
@@ -55,7 +57,8 @@ function showStep(step) {
   document.querySelectorAll('.current-step').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('input, button:not(#sendBtn)').forEach(el => el.classList.remove('active'));
   elements.editNote.style.display = "none";
-  elements.status.className = 'status-text'; 
+  elements.status.className = 'status-text';
+  
   if (step === 'phone') {
     document.getElementById('phoneLabel').classList.add('active');
     elements.phone.classList.add('active');
@@ -77,8 +80,8 @@ function showStep(step) {
 
 function getYearLetter() {
   const year = new Date().getFullYear();
-  const offset = year - 2026;                 
-  return String.fromCharCode(85 + offset);    
+  const offset = year - 2026;
+  return String.fromCharCode(85 + offset);
 }
 
 function getMonthThirdLetter() {
@@ -89,7 +92,7 @@ function getMonthThirdLetter() {
 function getDayCode() {
   const day = new Date().getDate();
   if (day <= 9) {
-    return day.toString(); 
+    return day.toString();
   } else {
     return String.fromCharCode(65 + (day - 10));
   }
@@ -113,7 +116,7 @@ elements.amountOkBtn.addEventListener("click", () => {
   const cost = calculateCost(amt);
   const required = amt + cost;
   if (required > user.balance) {
-    return showStatus(`Availabe airtime in your account: ${formatBalance(user.balance)}\nNeed more airtime to total this amount : ${formatBalance(required)} Please buy airtime to complete transcation`, true);
+    return showStatus(`Available airtime in your account: ${formatBalance(user.balance)}\nNeed more airtime to total this amount : ${formatBalance(required)} Please buy airtime to complete transaction`, true);
   }
   showStep('name');
 });
@@ -133,6 +136,7 @@ elements.sendBtn.addEventListener("click", async () => {
   elements.sendBtn.disabled = true;
 
   try {
+    // Step 1: Create pending message → get message_id
     const sysRes = await fetch(`${SYSTEM_API}/send`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -140,20 +144,40 @@ elements.sendBtn.addEventListener("click", async () => {
         fromPhone: user.phone,
         toPhone: phoneVal,
         amount: amountVal
+        // message: ...  ← optional, not sent here
       })
     });
 
     const sysData = await sysRes.json();
-    if (!sysRes.ok) throw new Error(sysData.error || "Transaction failed");
+    if (!sysRes.ok) throw new Error(sysData.error || "Failed to prepare transaction");
 
-    user.balance = sysData.balance;
+    const messageId = sysData.message_id;
+    if (!messageId) throw new Error("No message ID received from system");
+
+    // Step 2: Confirm → deduct balance
+    const confirmRes = await fetch(`${SYSTEM_API}/confirm-message`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message_id: messageId,
+        fromPhone: user.phone
+      })
+    });
+
+    const confirmData = await confirmRes.json();
+    if (!confirmRes.ok) throw new Error(confirmData.error || "Confirmation failed - funds not deducted");
+
+    // Update local user balance from confirmed response
+    user.balance = confirmData.newBalance;
     localStorage.setItem('mledger_user', JSON.stringify(user));
 
-    const yearLetter  = getYearLetter();
+    // ────────────────────────────────────────────────
+    // Everything below this line is unchanged
+    // ────────────────────────────────────────────────
+    const yearLetter = getYearLetter();
     const monthLetter = getMonthThirdLetter();
-    const dayCode     = getDayCode();
-    const randomPart  = Math.random().toString(36).substring(2,8).toUpperCase();
-
+    const dayCode = getDayCode();
+    const randomPart = Math.random().toString(36).substring(2,8).toUpperCase();
     const token = `${yearLetter}${monthLetter}${dayCode}K${randomPart}`;
 
     const dateStr = formatNumericDate();
@@ -163,6 +187,7 @@ elements.sendBtn.addEventListener("click", async () => {
 
     showStatus(message);
 
+    // Forward to external API (unchanged)
     fetch(`${EXTERNAL_API}/send`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
