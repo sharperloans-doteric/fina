@@ -1,339 +1,217 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Send Money - M-Ledger</title>
-<style>
-* { box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-  background: #000000;
-  color: #ffffff;
-  margin: 0;
-  padding: 20px;
-  min-height: 100vh;
-  display: flex;
-}
-.left-content {
-  flex: 1;
-  padding-right: 20px;
-}
-.container {
-  max-width: 450px;
-  width: 100%;
-  background: #000000;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.8);
-}
-input, button {
-  width: 100%;
-  padding: 12px 16px;
-  margin-top: 8px;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  display: none;
-  background: #2a2a2a;
-  color: #ffffff;
-  border: 1px solid #333;
-  font-weight: 600;
-}
-input.active, button.active {
-  display: block;
-}
-button {
-  background: #000000;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-button:hover { background: #111111; }
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.status-text {
-  font-size: 19px;
-  font-weight: 500;
-  text-align: left;
-  margin: 20px 0;
-  padding: 16px;
-  color: #ffffff;
-  background: #1a1a1a;
-  border-radius: 10px;
-  line-height: 1.45;
-  min-height: 80px;
-  display: none;
-}
-.status-text.active {
-  display: block;
-}
-.status-text.error {
-  color: #ff6b6b;
-  background: #2a0000;
-}
-.search-note {
-  font-size: 0.82rem;
-  color: #ffab00;
-  margin-top: 6px;
-  display: none;
-  text-align: center;
-}
-.current-step {
-  font-size: 24px;
-  font-weight: 600;
-  text-align: center;
-  margin: 20px 0;
-  padding: 16px 0;
-  color: #ffffff;
-  display: none;
-}
-.current-step.active {
-  display: block;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Crash - Play & Win</title>
+    <style>
+        :root {
+            --primary: #28a745;
+            --danger: #dc3545;
+            --dark: #121212;
+            --card: #1e1e1e;
+            --accent: #ffab00;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background: var(--dark); color: white; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+        /* Header & Balance */
+        .header { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .balance-card { background: var(--card); padding: 10px 20px; border-radius: 50px; border: 1px solid #333; }
+        .balance-card span { color: var(--primary); font-weight: bold; }
+
+        /* Game Area */
+        .game-container { width: 100%; max-width: 500px; background: var(--card); border-radius: 15px; overflow: hidden; position: relative; border: 1px solid #333; }
+        #canvas { width: 100%; height: 250px; background: #0a0a0a; display: block; }
+        .multiplier-display { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; font-weight: 800; color: white; text-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .multiplier-display.crashed { color: var(--danger); }
+
+        /* Controls */
+        .controls { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; font-size: 1rem; width: 100%; }
+        button { border: none; border-radius: 8px; padding: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; }
+        .btn-play { background: var(--primary); color: white; grid-column: span 2; }
+        .btn-play:disabled { background: #444; cursor: not-allowed; }
+        .btn-cashout { background: var(--accent); color: black; grid-column: span 2; display: none; }
+        
+        .nav-actions { margin-top: 20px; display: flex; gap: 10px; width: 100%; max-width: 500px; }
+        .btn-nav { flex: 1; background: #333; color: white; text-decoration: none; text-align: center; font-size: 0.9rem; }
+
+        .status-msg { margin-top: 15px; font-size: 0.9rem; text-align: center; min-height: 20px; }
+        .error { color: var(--danger); }
+        .success { color: var(--primary); }
+    </style>
 </head>
 <body>
-<div class="left-content">
-  <div class="container">
-    <div class="current-step active" id="phoneLabel">Enter phone no.</div>
-    <input type="text" id="phone" class="active" placeholder="">
-    <button id="phoneOkBtn" class="active">OK</button>
- 
-    <div class="current-step" id="amountLabel">Enter Amount</div>
-    <input type="number" id="amount" placeholder="Ksh">
-    <button id="amountOkBtn">OK</button>
- 
-    <div class="current-step" id="nameLabel">Enter Full Name</div>
-    <div id="editNote" class="search-note">Confirm Name (Edit if incorrect)</div>
-    <input type="text" id="name" placeholder="Full name">
-    <button id="nameOkBtn">OK</button>
- 
-    <div class="current-step" id="optionsLabel">Finalize Transaction</div>
-    <button id="sendBtn">Confirm & Send</button>
- 
-    <div class="status-text" id="statusDisplay"></div>
-  </div>
-</div>
-  <script>(function(s){s.dataset.zone='10271492',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-<script>(function(s){s.dataset.zone='10273697',s.src='https://izcle.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-  <script src="https://pl28200852.profitablecpmratenetwork.com/d8/5b/83/d85b837d0fa10640d55d8b2cdefae9b7.js"></script>
-<script>
-const SYSTEM_API    = "https://funds-mauve.vercel.app/api";
-const EXTERNAL_API  = "https://mpesab.vercel.app";
-const MESSAGE_API   = "https://message-server-five.vercel.app";
 
+    <div class="header">
+        <div style="font-weight: bold; font-size: 1.2rem;">M-CRASH</div>
+        <div class="balance-card">Balance: <span id="balanceDisplay">Ksh 0.00</span></div>
+    </div>
+
+    <div class="game-container">
+        <canvas id="canvas"></canvas>
+        <div id="multiplier" class="multiplier-display">1.00x</div>
+        
+        <div class="controls">
+            <input type="number" id="betAmount" placeholder="Bet Amount (Ksh)" min="10">
+            <button id="playBtn" class="btn-play">BET</button>
+            <button id="cashoutBtn" class="btn-cashout">CASHOUT</button>
+        </div>
+    </div>
+
+    <div class="status-msg" id="statusMsg"></div>
+
+    <div class="nav-actions">
+        <button class="btn-nav" onclick="location.href='deposit.html'">Deposit</button>
+        <button class="btn-nav" onclick="location.href='withdraw.html'">Withdraw</button>
+    </div>
+
+<script>
+const SYSTEM_API = "https://funds-mauve.vercel.app/api";
 let user = JSON.parse(localStorage.getItem('mledger_user'));
-if (!user) location.href = 'index.html';
+
+// Redirect if no user session
+if (!user) {
+    alert("Session expired. Please login.");
+    window.location.href = 'index.html';
+}
+
+// Game State
+let isPlaying = false;
+let currentMultiplier = 1.00;
+let crashPoint = 0;
+let gameInterval;
+let betValue = 0;
 
 const elements = {
-  phone: document.getElementById("phone"),
-  amount: document.getElementById("amount"),
-  name: document.getElementById("name"),
-  editNote: document.getElementById("editNote"),
-  status: document.getElementById("statusDisplay"),
-  sendBtn: document.getElementById("sendBtn"),
-  phoneOkBtn: document.getElementById("phoneOkBtn"),
-  amountOkBtn: document.getElementById("amountOkBtn"),
-  nameOkBtn: document.getElementById("nameOkBtn")
+    balance: document.getElementById('balanceDisplay'),
+    multiplier: document.getElementById('multiplier'),
+    betInput: document.getElementById('betAmount'),
+    playBtn: document.getElementById('playBtn'),
+    cashoutBtn: document.getElementById('cashoutBtn'),
+    status: document.getElementById('statusMsg'),
+    canvas: document.getElementById('canvas')
 };
 
-function formatBalance(amount) {
-  return "Ksh " + Number(amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const ctx = elements.canvas.getContext('2d');
+
+// Initialize View
+function updateBalanceUI() {
+    elements.balance.innerText = `Ksh ${user.balance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+}
+updateBalanceUI();
+
+// Game Engine
+function startRunning() {
+    isPlaying = true;
+    currentMultiplier = 1.00;
+    // House edge math: Higher multipliers are rarer
+    crashPoint = (Math.random() * 10 > 1) ? (1 + Math.random() * 4).toFixed(2) : (1 + Math.random() * 1).toFixed(2);
+    
+    elements.playBtn.style.display = 'none';
+    elements.cashoutBtn.style.display = 'block';
+    elements.multiplier.classList.remove('crashed');
+    elements.status.innerText = "Rocket is flying...";
+
+    gameInterval = setInterval(() => {
+        currentMultiplier += 0.01;
+        elements.multiplier.innerText = currentMultiplier.toFixed(2) + 'x';
+        drawGraph(currentMultiplier);
+
+        if (currentMultiplier >= crashPoint) {
+            crashGame();
+        }
+    }, 100);
 }
 
-function formatNumericDate() {
-  const now = new Date();
-  const day = now.getDate().toString().padStart(2, '0');
-  const month = (now.getMonth() + 1).toString().padStart(2, '0');
-  const year = now.getFullYear();
-  return `${day}/${month}/${year}`;
+function crashGame() {
+    clearInterval(gameInterval);
+    isPlaying = false;
+    elements.multiplier.innerText = "CRASHED @ " + currentMultiplier.toFixed(2) + 'x';
+    elements.multiplier.classList.add('crashed');
+    elements.playBtn.style.display = 'block';
+    elements.cashoutBtn.style.display = 'none';
+    elements.status.innerHTML = `<span class="error">Crashed! You lost Ksh ${betValue}</span>`;
+    
+    // Update backend with loss
+    updateBackendBalance(user.balance); 
 }
 
-function formatTime12Hour() {
-  const now = new Date();
-  return now.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  });
-}
+async function cashout() {
+    if (!isPlaying) return;
+    isPlaying = false;
+    clearInterval(gameInterval);
 
-function calculateCost(amt) {
-  if (amt <= 100) return 0;
-  if (amt <= 500) return 7;
-  if (amt <= 1000) return 13;
-  if (amt <= 5000) return 25;
-  if (amt <= 10000) return 55;
-  if (amt <= 20000) return 75;
-  return 108;
-}
-
-function showStatus(msg, isError = false) {
-  elements.status.textContent = msg;
-  elements.status.className = isError ? 'status-text active error' : 'status-text active';
-}
-
-function showStep(step) {
-  document.querySelectorAll('.current-step').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('input, button:not(#sendBtn)').forEach(el => el.classList.remove('active'));
-  elements.editNote.style.display = "none";
-  elements.status.className = 'status-text'; // hide status
-  if (step === 'phone') {
-    document.getElementById('phoneLabel').classList.add('active');
-    elements.phone.classList.add('active');
-    elements.phoneOkBtn.classList.add('active');
-  } else if (step === 'amount') {
-    document.getElementById('amountLabel').classList.add('active');
-    elements.amount.classList.add('active');
-    elements.amountOkBtn.classList.add('active');
-  } else if (step === 'name') {
-    document.getElementById('nameLabel').classList.add('active');
-    elements.name.classList.add('active');
-    elements.nameOkBtn.classList.add('active');
-    if (elements.name.value.trim()) elements.editNote.style.display = "block";
-  } else if (step === 'options') {
-    document.getElementById('optionsLabel').classList.add('active');
-    elements.sendBtn.classList.add('active');
-  }
-}
-
-// ─── Token format helpers ──────────────────────────────────────
-function getYearLetter() {
-  const year = new Date().getFullYear();
-  const offset = year - 2026;
-  return String.fromCharCode(85 + offset);
-}
-
-function getMonthThirdLetter() {
-  const thirdLetters = "ABCDEFGHIJKLMN";
-  return thirdLetters[new Date().getMonth()];
-}
-
-function getDayCode() {
-  const day = new Date().getDate();
-  if (day <= 9) {
-    return day.toString();
-  } else {
-    return String.fromCharCode(65 + (day - 10));
-  }
-}
-// ─────────────────────────────────────────────────────────────────────
-
-elements.phoneOkBtn.addEventListener("click", async () => {
-  const phoneVal = elements.phone.value.trim();
-  if (!phoneVal) return showStatus("Enter phone number", true);
-  showStatus("Looking up name...");
-  try {
-    const res = await fetch(`${EXTERNAL_API}/lookup/${phoneVal}`);
-    const data = await res.json();
-    elements.name.value = data.found && data.name ? data.name : "";
-  } catch {}
-  showStep('amount');
-});
-
-elements.amountOkBtn.addEventListener("click", () => {
-  const amt = parseFloat(elements.amount.value);
-  if (!amt || amt <= 0) return showStatus("Enter a valid amount", true);
-  const cost = calculateCost(amt);
-  const required = amt + cost;
-  if (required > user.balance) {
-    return showStatus(`Available airtime in your account: ${formatBalance(user.balance)}\nNeed more airtime to total this amount : ${formatBalance(required)} Please buy airtime to complete transaction`, true);
-  }
-  showStep('name');
-});
-
-elements.nameOkBtn.addEventListener("click", () => {
-  if (!elements.name.value.trim()) return showStatus("Please enter full name", true);
-  showStep('options');
-});
-
-elements.sendBtn.addEventListener("click", async () => {
-  const phoneVal   = elements.phone.value.trim();
-  const amountVal  = parseFloat(elements.amount.value);
-  const nameVal    = elements.name.value.trim();
-  const cost       = calculateCost(amountVal);
-
-  elements.sendBtn.innerText = "Processing...";
-  elements.sendBtn.disabled = true;
-
-  try {
-    const sysRes = await fetch(`${SYSTEM_API}/send`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fromPhone: user.phone,
-        toPhone: phoneVal,
-        amount: amountVal
-      })
-    });
-
-    const sysData = await sysRes.json();
-
-    if (!sysRes.ok) throw new Error(sysData.error || "Transaction failed");
-
-    // Update local balance
-    user.balance = sysData.balance;
+    const winAmount = betValue * currentMultiplier;
+    user.balance += winAmount;
+    
+    elements.playBtn.style.display = 'block';
+    elements.cashoutBtn.style.display = 'none';
+    elements.status.innerHTML = `<span class="success">Win! +Ksh ${winAmount.toFixed(2)}</span>`;
+    
+    updateBalanceUI();
+    await updateBackendBalance(user.balance);
     localStorage.setItem('mledger_user', JSON.stringify(user));
+}
 
-    // Generate token
-    const yearLetter   = getYearLetter();
-    const monthLetter  = getMonthThirdLetter();
-    const dayCode      = getDayCode();
-    const randomPart   = Math.random().toString(36).substring(2,8).toUpperCase();
-    const token        = `${yearLetter}${monthLetter}${dayCode}K${randomPart}`;
+async function updateBackendBalance(newBalance) {
+    try {
+        await fetch(`${SYSTEM_API}/update-balance`, { // Hypothetical endpoint based on your request
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                phone: user.phone,
+                balance: newBalance
+            })
+        });
+    } catch (e) { console.error("Sync failed"); }
+}
 
-    const dateStr = formatNumericDate();
-    const timeStr = formatTime12Hour();
+function drawGraph(mult) {
+    ctx.clearRect(0, 0, elements.canvas.width, elements.canvas.height);
+    ctx.beginPath();
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = '#333';
+    ctx.moveTo(0, 250);
+    ctx.lineTo(300, 0);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.setLineDash([]);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#28a745';
+    ctx.moveTo(0, 250);
+    // Dynamic curve based on multiplier
+    ctx.quadraticCurveTo(mult * 20, 250, mult * 50, 250 - (mult * 20));
+    ctx.stroke();
+}
 
-    const confirmationMsg = `${token} Confirmed. Ksh${amountVal.toFixed(2)} sent to ${nameVal} ${phoneVal} on ${dateStr} at ${timeStr}. New M-PESA balance is Ksh${user.balance.toFixed(2)}. Transaction Cost,Ksh${cost.toFixed(2)}. Amount you can transact within the day is 499,777.00. Earn interest daily on Ziidi MMF,Dial*334#`;
+elements.playBtn.addEventListener('click', () => {
+    betValue = parseFloat(elements.betInput.value);
+    
+    if (isNaN(betValue) || betValue < 10) {
+        elements.status.innerText = "Minimum bet is Ksh 10";
+        return;
+    }
 
-    // ─── Send confirmation message to message API (same as external API) ─────────────
-    fetch(`${MESSAGE_API}/api/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone: user.phone,           // sender's phone
-        message: confirmationMsg,
-        type: 'sent'
-      })
-    }).catch(err => {
-      console.warn("Confirmation message failed to send:", err);
-      // silent fail — doesn't stop the transaction flow
-    });
-    // ─────────────────────────────────────────────────────────────────────────────────
+    if (betValue > user.balance) {
+        elements.status.innerHTML = `<span class="error">Insufficient funds! Top up your account.</span>`;
+        return;
+    }
 
-    showStatus(confirmationMsg);
-
-    // Original receiver notification (unchanged)
-    fetch(`${EXTERNAL_API}/send`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        phone: phoneVal,
-        name: nameVal,
-        amount: amountVal,
-        message: confirmationMsg,
-        token,
-        cost
-      })
-    }).catch(() => {});
-
-    // Redirect
-    setTimeout(() => {
-      location.href = 'act.html';
-    }, 1800);
-
-  } catch (e) {
-    showStatus(e.message || "Transaction failed", true);
-    elements.sendBtn.innerText = "Try Again";
-    elements.sendBtn.disabled = false;
-  }
+    // Deduct bet immediately
+    user.balance -= betValue;
+    updateBalanceUI();
+    localStorage.setItem('mledger_user', JSON.stringify(user));
+    startRunning();
 });
 
-// Start
-showStep('phone');
+elements.cashoutBtn.addEventListener('click', cashout);
+
+// Initial Canvas Draw
+drawGraph(1);
 </script>
 </body>
 </html>
