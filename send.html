@@ -1,217 +1,246 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M-Crash - Play & Win</title>
+    <title>M-Crash LIVE</title>
     <style>
         :root {
             --primary: #28a745;
             --danger: #dc3545;
-            --dark: #121212;
-            --card: #1e1e1e;
+            --dark: #000000;
+            --card: #151515;
             --accent: #ffab00;
         }
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { background: var(--dark); color: white; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { background: var(--dark); color: white; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
 
-        /* Header & Balance */
-        .header { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .balance-card { background: var(--card); padding: 10px 20px; border-radius: 50px; border: 1px solid #333; }
-        .balance-card span { color: var(--primary); font-weight: bold; }
+        /* Header */
+        .header { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
+        .balance-box { background: #222; padding: 8px 15px; border-radius: 20px; border: 1px solid #333; }
+        .balance-box span { color: var(--primary); font-weight: bold; }
 
-        /* Game Area */
-        .game-container { width: 100%; max-width: 500px; background: var(--card); border-radius: 15px; overflow: hidden; position: relative; border: 1px solid #333; }
-        #canvas { width: 100%; height: 250px; background: #0a0a0a; display: block; }
-        .multiplier-display { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; font-weight: 800; color: white; text-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .multiplier-display.crashed { color: var(--danger); }
+        /* Game Display */
+        .game-window { 
+            width: 100%; max-width: 500px; height: 300px; background: #0a0a0a; 
+            border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #222;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        #multiplier { font-size: 4rem; font-weight: 900; z-index: 2; transition: color 0.2s; }
+        .crashed { color: var(--danger) !important; }
+        .flying { color: white; }
+        .waiting { color: var(--accent); font-size: 1.5rem !important; }
+
+        canvas { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; }
 
         /* Controls */
-        .controls { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; font-size: 1rem; width: 100%; }
-        button { border: none; border-radius: 8px; padding: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; }
-        .btn-play { background: var(--primary); color: white; grid-column: span 2; }
-        .btn-play:disabled { background: #444; cursor: not-allowed; }
-        .btn-cashout { background: var(--accent); color: black; grid-column: span 2; display: none; }
+        .bet-area { 
+            width: 100%; max-width: 500px; background: var(--card); 
+            margin-top: 15px; padding: 20px; border-radius: 15px; border: 1px solid #222;
+        }
+        input { 
+            width: 100%; background: #000; border: 1px solid #333; 
+            color: white; padding: 15px; border-radius: 10px; font-size: 1.1rem; margin-bottom: 10px;
+        }
+        button { 
+            width: 100%; padding: 15px; border-radius: 10px; border: none; 
+            font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.3s;
+        }
+        .btn-bet { background: var(--primary); color: white; }
+        .btn-bet.cancel { background: #444; }
+        .btn-cashout { background: var(--accent); color: black; display: none; }
         
-        .nav-actions { margin-top: 20px; display: flex; gap: 10px; width: 100%; max-width: 500px; }
-        .btn-nav { flex: 1; background: #333; color: white; text-decoration: none; text-align: center; font-size: 0.9rem; }
-
-        .status-msg { margin-top: 15px; font-size: 0.9rem; text-align: center; min-height: 20px; }
-        .error { color: var(--danger); }
-        .success { color: var(--primary); }
+        .status-msg { margin-top: 10px; font-size: 0.9rem; text-align: center; height: 20px; color: #888; }
+        
+        .nav { display: flex; gap: 10px; width: 100%; max-width: 500px; margin-top: 20px; }
+        .nav-btn { flex: 1; background: #222; color: #ccc; text-align: center; padding: 10px; text-decoration: none; border-radius: 5px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div style="font-weight: bold; font-size: 1.2rem;">M-CRASH</div>
-        <div class="balance-card">Balance: <span id="balanceDisplay">Ksh 0.00</span></div>
+        <div style="font-weight: 800; letter-spacing: 1px;">M-LEDGER CRASH</div>
+        <div class="balance-box">Ksh <span id="balance">0.00</span></div>
     </div>
 
-    <div class="game-container">
-        <canvas id="canvas"></canvas>
-        <div id="multiplier" class="multiplier-display">1.00x</div>
-        
-        <div class="controls">
-            <input type="number" id="betAmount" placeholder="Bet Amount (Ksh)" min="10">
-            <button id="playBtn" class="btn-play">BET</button>
-            <button id="cashoutBtn" class="btn-cashout">CASHOUT</button>
-        </div>
+    <div class="game-window">
+        <canvas id="graph"></canvas>
+        <div id="multiplier" class="waiting">Waiting for Round...</div>
     </div>
 
-    <div class="status-msg" id="statusMsg"></div>
+    <div class="status-msg" id="msg">Initializing engine...</div>
 
-    <div class="nav-actions">
-        <button class="btn-nav" onclick="location.href='deposit.html'">Deposit</button>
-        <button class="btn-nav" onclick="location.href='withdraw.html'">Withdraw</button>
+    <div class="bet-area">
+        <input type="number" id="betInput" placeholder="Enter Amount (Min 10)">
+        <button id="mainBtn" class="btn-bet">PLACE BET</button>
+        <button id="cashBtn" class="btn-cashout">CASHOUT</button>
+    </div>
+
+    <div class="nav">
+        <a href="deposit.html" class="nav-btn">DEPOSIT</a>
+        <a href="withdraw.html" class="nav-btn">WITHDRAW</a>
+        <a href="history.html" class="nav-btn">HISTORY</a>
     </div>
 
 <script>
-const SYSTEM_API = "https://funds-mauve.vercel.app/api";
+const API = "https://funds-mauve.vercel.app/api";
 let user = JSON.parse(localStorage.getItem('mledger_user'));
+if (!user) location.href = 'index.html';
 
-// Redirect if no user session
-if (!user) {
-    alert("Session expired. Please login.");
-    window.location.href = 'index.html';
-}
+// Game Constants
+let gameState = "WAITING"; // WAITING, FLYING, CRASHED
+let currentMult = 1.00;
+let crashAt = 0;
+let nextRoundIn = 5;
+let myBet = 0;
+let hasBetNextRound = false;
+let isActuallyInRound = false;
 
-// Game State
-let isPlaying = false;
-let currentMultiplier = 1.00;
-let crashPoint = 0;
-let gameInterval;
-let betValue = 0;
-
-const elements = {
-    balance: document.getElementById('balanceDisplay'),
-    multiplier: document.getElementById('multiplier'),
-    betInput: document.getElementById('betAmount'),
-    playBtn: document.getElementById('playBtn'),
-    cashoutBtn: document.getElementById('cashoutBtn'),
-    status: document.getElementById('statusMsg'),
-    canvas: document.getElementById('canvas')
+const el = {
+    balance: document.getElementById('balance'),
+    mult: document.getElementById('multiplier'),
+    btn: document.getElementById('mainBtn'),
+    cash: document.getElementById('cashBtn'),
+    input: document.getElementById('betInput'),
+    msg: document.getElementById('msg'),
+    canvas: document.getElementById('graph')
 };
+const ctx = el.canvas.getContext('2d');
 
-const ctx = elements.canvas.getContext('2d');
-
-// Initialize View
-function updateBalanceUI() {
-    elements.balance.innerText = `Ksh ${user.balance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+function updateUI() {
+    el.balance.innerText = user.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
 }
-updateBalanceUI();
+updateUI();
 
-// Game Engine
-function startRunning() {
-    isPlaying = true;
-    currentMultiplier = 1.00;
-    // House edge math: Higher multipliers are rarer
-    crashPoint = (Math.random() * 10 > 1) ? (1 + Math.random() * 4).toFixed(2) : (1 + Math.random() * 1).toFixed(2);
-    
-    elements.playBtn.style.display = 'none';
-    elements.cashoutBtn.style.display = 'block';
-    elements.multiplier.classList.remove('crashed');
-    elements.status.innerText = "Rocket is flying...";
-
-    gameInterval = setInterval(() => {
-        currentMultiplier += 0.01;
-        elements.multiplier.innerText = currentMultiplier.toFixed(2) + 'x';
-        drawGraph(currentMultiplier);
-
-        if (currentMultiplier >= crashPoint) {
-            crashGame();
-        }
-    }, 100);
+// Core Loop
+function gameLoop() {
+    if (gameState === "WAITING") {
+        runWaiting();
+    } else if (gameState === "FLYING") {
+        runFlying();
+    } else if (gameState === "CRASHED") {
+        runCrashed();
+    }
 }
 
-function crashGame() {
-    clearInterval(gameInterval);
-    isPlaying = false;
-    elements.multiplier.innerText = "CRASHED @ " + currentMultiplier.toFixed(2) + 'x';
-    elements.multiplier.classList.add('crashed');
-    elements.playBtn.style.display = 'block';
-    elements.cashoutBtn.style.display = 'none';
-    elements.status.innerHTML = `<span class="error">Crashed! You lost Ksh ${betValue}</span>`;
+function runWaiting() {
+    nextRoundIn -= 0.05;
+    el.mult.className = "waiting";
+    el.mult.innerText = `Next Round in ${Math.max(0, nextRoundIn).toFixed(1)}s`;
     
-    // Update backend with loss
-    updateBackendBalance(user.balance); 
+    if (nextRoundIn <= 0) {
+        startRound();
+    }
 }
 
-async function cashout() {
-    if (!isPlaying) return;
-    isPlaying = false;
-    clearInterval(gameInterval);
-
-    const winAmount = betValue * currentMultiplier;
-    user.balance += winAmount;
+function startRound() {
+    gameState = "FLYING";
+    currentMult = 1.00;
+    // Real Aviator math logic
+    const rand = Math.random();
+    crashAt = rand < 0.1 ? 1.00 : (1 / (1 - Math.random() + 0.01)).toFixed(2);
     
-    elements.playBtn.style.display = 'block';
-    elements.cashoutBtn.style.display = 'none';
-    elements.status.innerHTML = `<span class="success">Win! +Ksh ${winAmount.toFixed(2)}</span>`;
-    
-    updateBalanceUI();
-    await updateBackendBalance(user.balance);
-    localStorage.setItem('mledger_user', JSON.stringify(user));
+    if (hasBetNextRound) {
+        isActuallyInRound = true;
+        hasBetNextRound = false;
+        el.cash.style.display = "block";
+        el.btn.style.display = "none";
+    }
 }
 
-async function updateBackendBalance(newBalance) {
-    try {
-        await fetch(`${SYSTEM_API}/update-balance`, { // Hypothetical endpoint based on your request
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                phone: user.phone,
-                balance: newBalance
-            })
-        });
-    } catch (e) { console.error("Sync failed"); }
+function runFlying() {
+    currentMult += (currentMult * 0.005); // Speed increases as it goes higher
+    el.mult.className = "flying";
+    el.mult.innerText = currentMult.toFixed(2) + "x";
+    draw(currentMult);
+
+    if (currentMult >= crashAt) {
+        gameState = "CRASHED";
+        setTimeout(() => {
+            gameState = "WAITING";
+            nextRoundIn = 5;
+            isActuallyInRound = false;
+            el.btn.className = "btn-bet";
+            el.btn.innerText = "PLACE BET";
+            el.btn.style.display = "block";
+            el.cash.style.display = "none";
+        }, 3000);
+    }
 }
 
-function drawGraph(mult) {
-    ctx.clearRect(0, 0, elements.canvas.width, elements.canvas.height);
-    ctx.beginPath();
-    ctx.setLineDash([5, 5]);
-    ctx.strokeStyle = '#333';
-    ctx.moveTo(0, 250);
-    ctx.lineTo(300, 0);
-    ctx.stroke();
-    
-    ctx.beginPath();
-    ctx.setLineDash([]);
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = '#28a745';
-    ctx.moveTo(0, 250);
-    // Dynamic curve based on multiplier
-    ctx.quadraticCurveTo(mult * 20, 250, mult * 50, 250 - (mult * 20));
-    ctx.stroke();
+function runCrashed() {
+    el.mult.className = "crashed";
+    el.mult.innerText = "FLEW AWAY!";
+    if (isActuallyInRound) {
+        el.msg.innerText = "You lost Ksh " + myBet;
+        isActuallyInRound = false;
+        syncBalance();
+    }
 }
 
-elements.playBtn.addEventListener('click', () => {
-    betValue = parseFloat(elements.betInput.value);
-    
-    if (isNaN(betValue) || betValue < 10) {
-        elements.status.innerText = "Minimum bet is Ksh 10";
+// User Actions
+el.btn.addEventListener('click', () => {
+    if (hasBetNextRound) {
+        user.balance += myBet;
+        hasBetNextRound = false;
+        myBet = 0;
+        el.btn.innerText = "PLACE BET";
+        el.btn.classList.remove('cancel');
+        updateUI();
         return;
     }
 
-    if (betValue > user.balance) {
-        elements.status.innerHTML = `<span class="error">Insufficient funds! Top up your account.</span>`;
-        return;
+    const val = parseFloat(el.input.value);
+    if (val >= 10 && val <= user.balance) {
+        myBet = val;
+        user.balance -= val;
+        hasBetNextRound = true;
+        el.btn.innerText = "CANCEL BET";
+        el.btn.classList.add('cancel');
+        el.msg.innerText = "Bet placed for next round";
+        updateUI();
+    } else {
+        el.msg.innerText = "Check balance or min bet (10)";
     }
-
-    // Deduct bet immediately
-    user.balance -= betValue;
-    updateBalanceUI();
-    localStorage.setItem('mledger_user', JSON.stringify(user));
-    startRunning();
 });
 
-elements.cashoutBtn.addEventListener('click', cashout);
+el.cash.addEventListener('click', async () => {
+    if (!isActuallyInRound) return;
+    
+    const win = myBet * currentMult;
+    user.balance += win;
+    isActuallyInRound = false;
+    
+    el.cash.style.display = "none";
+    el.msg.innerHTML = `<b style="color:#28a745">Win: Ksh ${win.toFixed(2)}</b>`;
+    
+    updateUI();
+    localStorage.setItem('mledger_user', JSON.stringify(user));
+    await syncBalance();
+});
 
-// Initial Canvas Draw
-drawGraph(1);
+async function syncBalance() {
+    try {
+        await fetch(`${API}/update`, { // Adjust to your actual system update path
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ phone: user.phone, balance: user.balance })
+        });
+    } catch(e) {}
+}
+
+function draw(m) {
+    ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
+    ctx.beginPath();
+    ctx.strokeStyle = "#28a745";
+    ctx.lineWidth = 5;
+    ctx.moveTo(0, 150);
+    ctx.quadraticCurveTo(m * 10, 150, m * 20, 150 - (m * 5));
+    ctx.stroke();
+}
+
+// Start Game Engine
+setInterval(gameLoop, 50);
 </script>
 </body>
 </html>
