@@ -1,246 +1,257 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M-Crash LIVE</title>
+    <title>M-Crash LIVE - Real-time</title>
     <style>
         :root {
             --primary: #28a745;
-            --danger: #dc3545;
+            --danger: #ff4757;
             --dark: #000000;
-            --card: #151515;
+            --card: #121212;
             --accent: #ffab00;
         }
-        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
-        body { background: var(--dark); color: white; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--dark); color: white; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
 
-        /* Header */
-        .header { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
-        .balance-box { background: #222; padding: 8px 15px; border-radius: 20px; border: 1px solid #333; }
-        .balance-box span { color: var(--primary); font-weight: bold; }
+        /* Balance & Stats */
+        .header { width: 100%; max-width: 480px; display: flex; justify-content: space-between; align-items: center; padding: 15px 5px; }
+        .bal-pill { background: #1a1a1a; padding: 10px 18px; border-radius: 30px; border: 1px solid #333; font-weight: 700; }
+        .bal-pill span { color: var(--primary); }
 
-        /* Game Display */
-        .game-window { 
-            width: 100%; max-width: 500px; height: 300px; background: #0a0a0a; 
-            border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #222;
+        /* Display Screen */
+        .display-screen { 
+            width: 100%; max-width: 480px; height: 280px; background: #050505; 
+            border-radius: 20px; position: relative; overflow: hidden; border: 1px solid #222;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-        #multiplier { font-size: 4rem; font-weight: 900; z-index: 2; transition: color 0.2s; }
-        .crashed { color: var(--danger) !important; }
-        .flying { color: white; }
-        .waiting { color: var(--accent); font-size: 1.5rem !important; }
+        #mult-text { font-size: 3.5rem; font-weight: 900; z-index: 5; transition: transform 0.1s ease; }
+        .status-badge { position: absolute; top: 15px; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 5px; font-size: 0.75rem; color: #888; text-transform: uppercase; }
 
-        canvas { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; }
+        /* Animation Background */
+        canvas { position: absolute; width: 100%; height: 100%; opacity: 0.6; }
 
-        /* Controls */
-        .bet-area { 
-            width: 100%; max-width: 500px; background: var(--card); 
-            margin-top: 15px; padding: 20px; border-radius: 15px; border: 1px solid #222;
+        /* Betting Section */
+        .bet-box { 
+            width: 100%; max-width: 480px; background: var(--card); 
+            margin-top: 15px; padding: 20px; border-radius: 20px; border: 1px solid #222;
         }
+        .input-group { position: relative; margin-bottom: 12px; }
         input { 
             width: 100%; background: #000; border: 1px solid #333; 
-            color: white; padding: 15px; border-radius: 10px; font-size: 1.1rem; margin-bottom: 10px;
+            color: white; padding: 18px; border-radius: 12px; font-size: 1.2rem; outline: none;
         }
         button { 
-            width: 100%; padding: 15px; border-radius: 10px; border: none; 
-            font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.3s;
+            width: 100%; padding: 18px; border-radius: 12px; border: none; 
+            font-weight: 800; font-size: 1.1rem; cursor: pointer; transition: 0.2s;
         }
-        .btn-bet { background: var(--primary); color: white; }
-        .btn-bet.cancel { background: #444; }
-        .btn-cashout { background: var(--accent); color: black; display: none; }
+        .btn-bet { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); }
+        .btn-bet.active-bet { background: #333; color: #888; }
         
-        .status-msg { margin-top: 10px; font-size: 0.9rem; text-align: center; height: 20px; color: #888; }
+        /* Dynamic Cashout Button */
+        .btn-cashout { 
+            background: var(--accent); color: black; display: none; 
+            flex-direction: column; line-height: 1.2;
+        }
+        .btn-cashout small { font-size: 0.7rem; opacity: 0.8; font-weight: 600; }
+        .btn-cashout span { font-size: 1.3rem; }
         
-        .nav { display: flex; gap: 10px; width: 100%; max-width: 500px; margin-top: 20px; }
-        .nav-btn { flex: 1; background: #222; color: #ccc; text-align: center; padding: 10px; text-decoration: none; border-radius: 5px; font-size: 0.8rem; }
+        .msg-log { margin-top: 10px; font-size: 0.85rem; color: #666; height: 20px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div style="font-weight: 800; letter-spacing: 1px;">M-LEDGER CRASH</div>
-        <div class="balance-box">Ksh <span id="balance">0.00</span></div>
+        <div style="font-weight: 900; color: #eee;">M-CRASH</div>
+        <div class="bal-pill">Ksh <span id="user-bal">0.00</span></div>
     </div>
 
-    <div class="game-window">
-        <canvas id="graph"></canvas>
-        <div id="multiplier" class="waiting">Waiting for Round...</div>
+    <div class="display-screen">
+        <div class="status-badge" id="game-status">Live Engine</div>
+        <canvas id="bg-canvas"></canvas>
+        <div id="mult-text" style="color: var(--accent);">Waiting...</div>
     </div>
 
-    <div class="status-msg" id="msg">Initializing engine...</div>
+    <div class="msg-log" id="game-msg">Ready to play</div>
 
-    <div class="bet-area">
-        <input type="number" id="betInput" placeholder="Enter Amount (Min 10)">
-        <button id="mainBtn" class="btn-bet">PLACE BET</button>
-        <button id="cashBtn" class="btn-cashout">CASHOUT</button>
+    <div class="bet-box">
+        <div class="input-group">
+            <input type="number" id="bet-amt" placeholder="Amount (Min 10)">
+        </div>
+        <button id="bet-btn" class="btn-bet">PLACE BET</button>
+        <button id="cash-btn" class="btn-cashout">
+            <small>CASHOUT</small>
+            <span id="cash-val">Ksh 0.00</span>
+        </button>
     </div>
 
-    <div class="nav">
-        <a href="deposit.html" class="nav-btn">DEPOSIT</a>
-        <a href="withdraw.html" class="nav-btn">WITHDRAW</a>
-        <a href="history.html" class="nav-btn">HISTORY</a>
+    <div style="margin-top:20px; display:flex; gap:10px; width:100%; max-width:480px;">
+        <button onclick="location.href='deposit.html'" style="background:#1a1a1a; font-size:0.8rem; padding:10px; color:#aaa;">DEPOSIT</button>
+        <button onclick="location.href='withdraw.html'" style="background:#1a1a1a; font-size:0.8rem; padding:10px; color:#aaa;">WITHDRAW</button>
     </div>
 
 <script>
+// Logic Configuration
 const API = "https://funds-mauve.vercel.app/api";
-let user = JSON.parse(localStorage.getItem('mledger_user'));
-if (!user) location.href = 'index.html';
+let userData = JSON.parse(localStorage.getItem('mledger_user')) || { balance: 0, phone: "000" };
 
-// Game Constants
-let gameState = "WAITING"; // WAITING, FLYING, CRASHED
-let currentMult = 1.00;
-let crashAt = 0;
-let nextRoundIn = 5;
-let myBet = 0;
-let hasBetNextRound = false;
-let isActuallyInRound = false;
+// Global States
+let state = "WAITING"; // WAITING, FLYING, CRASHED
+let multiplier = 1.00;
+let crashPoint = 0;
+let countdown = 5.0;
+let currentBet = 0;
+let isSubscribed = false; // Is the user in the current flying round?
+let hasQueuedBet = false; // Is there a bet waiting for the next round?
 
-const el = {
-    balance: document.getElementById('balance'),
-    mult: document.getElementById('multiplier'),
-    btn: document.getElementById('mainBtn'),
-    cash: document.getElementById('cashBtn'),
-    input: document.getElementById('betInput'),
-    msg: document.getElementById('msg'),
-    canvas: document.getElementById('graph')
+const dom = {
+    bal: document.getElementById('user-bal'),
+    mult: document.getElementById('mult-text'),
+    status: document.getElementById('game-status'),
+    betBtn: document.getElementById('bet-btn'),
+    cashBtn: document.getElementById('cash-btn'),
+    cashVal: document.getElementById('cash-val'),
+    input: document.getElementById('bet-amt'),
+    msg: document.getElementById('game-msg')
 };
-const ctx = el.canvas.getContext('2d');
 
-function updateUI() {
-    el.balance.innerText = user.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
+function refreshBalance() {
+    dom.bal.innerText = userData.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
 }
-updateUI();
+refreshBalance();
 
-// Core Loop
-function gameLoop() {
-    if (gameState === "WAITING") {
-        runWaiting();
-    } else if (gameState === "FLYING") {
-        runFlying();
-    } else if (gameState === "CRASHED") {
-        runCrashed();
+// Main Engine Loop (runs 60fps)
+function engine() {
+    if (state === "WAITING") {
+        countdown -= 0.016;
+        dom.mult.innerText = countdown.toFixed(1) + "s";
+        dom.mult.style.color = "var(--accent)";
+        dom.status.innerText = "Next Round In";
+        
+        if (countdown <= 0) {
+            startFlying();
+        }
+    } 
+    else if (state === "FLYING") {
+        multiplier += (multiplier * 0.006); // Speed curve
+        dom.mult.innerText = multiplier.toFixed(2) + "x";
+        dom.mult.style.color = "white";
+        dom.status.innerText = "Flying...";
+        
+        // Update Cashout Button Value
+        if (isSubscribed) {
+            const liveWin = currentBet * multiplier;
+            dom.cashVal.innerText = "Ksh " + liveWin.toFixed(2);
+        }
+
+        if (multiplier >= crashPoint) {
+            triggerCrash();
+        }
     }
+    requestAnimationFrame(engine);
 }
 
-function runWaiting() {
-    nextRoundIn -= 0.05;
-    el.mult.className = "waiting";
-    el.mult.innerText = `Next Round in ${Math.max(0, nextRoundIn).toFixed(1)}s`;
+function startFlying() {
+    state = "FLYING";
+    multiplier = 1.00;
+    // Calculation: 10% chance of instant crash at 1.00x, else random
+    crashPoint = Math.random() < 0.1 ? 1.00 : (1 + Math.pow(Math.random(), 2) * 10).toFixed(2);
     
-    if (nextRoundIn <= 0) {
-        startRound();
+    if (hasQueuedBet) {
+        isSubscribed = true;
+        hasQueuedBet = false;
+        dom.betBtn.style.display = "none";
+        dom.cashBtn.style.display = "flex";
     }
 }
 
-function startRound() {
-    gameState = "FLYING";
-    currentMult = 1.00;
-    // Real Aviator math logic
-    const rand = Math.random();
-    crashAt = rand < 0.1 ? 1.00 : (1 / (1 - Math.random() + 0.01)).toFixed(2);
+function triggerCrash() {
+    state = "CRASHED";
+    dom.mult.innerText = multiplier.toFixed(2) + "x";
+    dom.mult.style.color = "var(--danger)";
+    dom.status.innerText = "Crashed";
     
-    if (hasBetNextRound) {
-        isActuallyInRound = true;
-        hasBetNextRound = false;
-        el.cash.style.display = "block";
-        el.btn.style.display = "none";
+    if (isSubscribed) {
+        dom.msg.innerText = "Flew away! Lost Ksh " + currentBet;
+        isSubscribed = false;
+        syncWithServer();
     }
-}
 
-function runFlying() {
-    currentMult += (currentMult * 0.005); // Speed increases as it goes higher
-    el.mult.className = "flying";
-    el.mult.innerText = currentMult.toFixed(2) + "x";
-    draw(currentMult);
-
-    if (currentMult >= crashAt) {
-        gameState = "CRASHED";
-        setTimeout(() => {
-            gameState = "WAITING";
-            nextRoundIn = 5;
-            isActuallyInRound = false;
-            el.btn.className = "btn-bet";
-            el.btn.innerText = "PLACE BET";
-            el.btn.style.display = "block";
-            el.cash.style.display = "none";
-        }, 3000);
-    }
-}
-
-function runCrashed() {
-    el.mult.className = "crashed";
-    el.mult.innerText = "FLEW AWAY!";
-    if (isActuallyInRound) {
-        el.msg.innerText = "You lost Ksh " + myBet;
-        isActuallyInRound = false;
-        syncBalance();
-    }
+    // Reset after 3 seconds
+    setTimeout(() => {
+        state = "WAITING";
+        countdown = 5.0;
+        multiplier = 1.00;
+        dom.betBtn.style.display = "block";
+        dom.betBtn.innerText = "PLACE BET";
+        dom.betBtn.classList.remove('active-bet');
+        dom.cashBtn.style.display = "none";
+        dom.msg.innerText = "Ready for new round";
+    }, 3000);
 }
 
 // User Actions
-el.btn.addEventListener('click', () => {
-    if (hasBetNextRound) {
-        user.balance += myBet;
-        hasBetNextRound = false;
-        myBet = 0;
-        el.btn.innerText = "PLACE BET";
-        el.btn.classList.remove('cancel');
-        updateUI();
+dom.betBtn.addEventListener('click', () => {
+    if (hasQueuedBet) {
+        // Cancel bet
+        userData.balance += currentBet;
+        hasQueuedBet = false;
+        currentBet = 0;
+        dom.betBtn.innerText = "PLACE BET";
+        dom.betBtn.classList.remove('active-bet');
+        refreshBalance();
         return;
     }
 
-    const val = parseFloat(el.input.value);
-    if (val >= 10 && val <= user.balance) {
-        myBet = val;
-        user.balance -= val;
-        hasBetNextRound = true;
-        el.btn.innerText = "CANCEL BET";
-        el.btn.classList.add('cancel');
-        el.msg.innerText = "Bet placed for next round";
-        updateUI();
+    const amt = parseFloat(dom.input.value);
+    if (amt >= 10 && amt <= userData.balance) {
+        currentBet = amt;
+        userData.balance -= amt;
+        hasQueuedBet = true;
+        dom.betBtn.innerText = "CANCEL (Ksh " + amt + ")";
+        dom.betBtn.classList.add('active-bet');
+        dom.msg.innerText = "Bet accepted for next round";
+        refreshBalance();
     } else {
-        el.msg.innerText = "Check balance or min bet (10)";
+        dom.msg.innerText = "Check balance / Min bet 10";
     }
 });
 
-el.cash.addEventListener('click', async () => {
-    if (!isActuallyInRound) return;
+dom.cashBtn.addEventListener('click', () => {
+    if (!isSubscribed) return;
     
-    const win = myBet * currentMult;
-    user.balance += win;
-    isActuallyInRound = false;
+    const finalWin = currentBet * multiplier;
+    userData.balance += finalWin;
+    isSubscribed = false;
     
-    el.cash.style.display = "none";
-    el.msg.innerHTML = `<b style="color:#28a745">Win: Ksh ${win.toFixed(2)}</b>`;
+    dom.cashBtn.style.display = "none";
+    dom.betBtn.style.display = "block";
+    dom.betBtn.innerText = "WAITING...";
+    dom.betBtn.disabled = true;
     
-    updateUI();
-    localStorage.setItem('mledger_user', JSON.stringify(user));
-    await syncBalance();
+    dom.msg.innerHTML = `<span style="color:var(--primary)">SUCCESS! +Ksh ${finalWin.toFixed(2)}</span>`;
+    
+    setTimeout(() => { dom.betBtn.disabled = false; dom.betBtn.innerText = "PLACE BET"; }, 2000);
+    
+    refreshBalance();
+    localStorage.setItem('mledger_user', JSON.stringify(userData));
+    syncWithServer();
 });
 
-async function syncBalance() {
+async function syncWithServer() {
     try {
-        await fetch(`${API}/update`, { // Adjust to your actual system update path
+        await fetch(`${API}/update`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ phone: user.phone, balance: user.balance })
+            body: JSON.stringify({ phone: userData.phone, balance: userData.balance })
         });
-    } catch(e) {}
+    } catch(e) { console.warn("Background sync failed"); }
 }
 
-function draw(m) {
-    ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
-    ctx.beginPath();
-    ctx.strokeStyle = "#28a745";
-    ctx.lineWidth = 5;
-    ctx.moveTo(0, 150);
-    ctx.quadraticCurveTo(m * 10, 150, m * 20, 150 - (m * 5));
-    ctx.stroke();
-}
-
-// Start Game Engine
-setInterval(gameLoop, 50);
+// Kickstart Engine
+engine();
 </script>
 </body>
 </html>
