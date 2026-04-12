@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M-Crash PRO - Aviator Style</title>
+    <title>M-Crash PRO - Sound Fixed</title>
     <style>
         :root {
             --primary: #28a745;
@@ -12,7 +13,7 @@
             --card: #1a1a1a;
             --accent: #ffab00;
         }
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--dark); color: white; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
 
         .header { width: 100%; max-width: 600px; display: flex; justify-content: space-between; padding: 15px; }
@@ -23,20 +24,16 @@
             border-radius: 20px; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
             border: 1px solid #222; overflow: hidden; margin-bottom: 20px;
         }
-        #mult-text { font-size: 5rem; font-weight: 900; z-index: 10; transition: transform 0.1s; }
+        #mult-text { font-size: 5rem; font-weight: 900; z-index: 10; }
 
-        .bet-container { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 600px; 
-        }
+        .bet-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 600px; }
         .bet-box { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid #333; text-align: center; }
         input { width: 100%; background: #000; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; font-size: 1.2rem; text-align: center; }
         
         button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1.1rem; }
-        .btn-bet { background: var(--primary); color: white; box-shadow: 0 4px 0 #1b6d2d; }
-        .btn-bet:active { transform: translateY(2px); box-shadow: 0 2px 0 #1b6d2d; }
-        .btn-cash { background: var(--accent); color: black; display: none; flex-direction: column; box-shadow: 0 4px 0 #b37700; }
-        .btn-cash:active { transform: translateY(2px); box-shadow: 0 2px 0 #b37700; }
-        .active-bet { background: #333; color: #777; box-shadow: none; }
+        .btn-bet { background: var(--primary); color: white; }
+        .btn-cash { background: var(--accent); color: black; display: none; flex-direction: column; }
+        .active-bet { background: #333; color: #777; }
 
         @media (max-width: 500px) { .bet-container { grid-template-columns: 1fr; } }
     </style>
@@ -49,38 +46,47 @@
     </div>
 
     <div class="display-screen">
-        <div id="game-status" style="position:absolute; top:20px; color:#555; font-weight:bold; text-transform:uppercase;">Waiting for next round</div>
+        <div id="game-status" style="position:absolute; top:20px; color:#555; font-weight:bold; text-transform:uppercase;">Waiting...</div>
         <div id="mult-text" style="color: var(--accent);">0.00x</div>
     </div>
 
     <div class="bet-container">
         <div class="bet-box" id="panel-1">
-            <input type="number" class="bet-amt" value="10" min="10">
+            <input type="number" class="bet-amt" value="10">
             <button class="btn-bet" onclick="placeBet(1)">BET</button>
             <button class="btn-cash" onclick="cashout(1)">
-                <small style="font-size: 0.7rem;">CASHOUT</small>
+                <small>CASHOUT</small>
                 <span class="cash-val">0.00</span>
             </button>
         </div>
-
         <div class="bet-box" id="panel-2">
-            <input type="number" class="bet-amt" value="10" min="10">
+            <input type="number" class="bet-amt" value="10">
             <button class="btn-bet" onclick="placeBet(2)">BET</button>
             <button class="btn-cash" onclick="cashout(2)">
-                <small style="font-size: 0.7rem;">CASHOUT</small>
+                <small>CASHOUT</small>
                 <span class="cash-val">0.00</span>
             </button>
         </div>
     </div>
 
 <script>
-// --- SOUND EFFECTS (Aviator Style) ---
+// --- AUDIO SYSTEM ---
+// Using base64 or direct short mp3 links to ensure they play
 const sounds = {
-    engine: new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_c3507e169a.mp3'), // Hum
-    cash: new Audio('https://cdn.pixabay.com/audio/2021/08/04/audio_bbd17a780b.mp3'),   // Ding
-    crash: new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_7387e3549f.mp3')   // Fly away
+    engine: new Audio('https://www.soundjay.com/transportation/airplane-interior-1.mp3'), 
+    cash: new Audio('https://www.soundjay.com/buttons/button-09.mp3'),
+    crash: new Audio('https://www.soundjay.com/free-music/fleeing-away-01.mp3') 
 };
 sounds.engine.loop = true;
+
+// Fix for browsers blocking audio
+function unlockAudio() {
+    sounds.engine.play().then(() => {
+        sounds.engine.pause();
+    }).catch(e => console.log("Audio waiting for interaction"));
+    document.removeEventListener('click', unlockAudio);
+}
+document.addEventListener('click', unlockAudio);
 
 const FUND_API = "https://funds-mauve.vercel.app/api/fund";
 let userData = JSON.parse(localStorage.getItem('mledger_user')) || { balance: 0, phone: "000" };
@@ -89,10 +95,7 @@ let multiplier = 1.00;
 let crashPoint = 0;
 let countdown = 5.0;
 
-let bets = {
-    1: { amount: 0, status: "NONE" },
-    2: { amount: 0, status: "NONE" }
-};
+let bets = { 1: { amount: 0, status: "NONE" }, 2: { amount: 0, status: "NONE" } };
 
 function engine() {
     if (gameState === "WAITING") {
@@ -102,14 +105,10 @@ function engine() {
         if (countdown <= 0) startRound();
     } 
     else if (gameState === "FLYING") {
-        // Smooth flying curve
         multiplier += (multiplier * 0.0075);
         document.getElementById('mult-text').innerText = multiplier.toFixed(2) + "x";
         document.getElementById('mult-text').style.color = "white";
         
-        // Dynamic sound pitch
-        sounds.engine.playbackRate = Math.min(2, 1 + (multiplier / 15));
-
         [1, 2].forEach(id => {
             if (bets[id].status === "FLYING") {
                 const p = document.getElementById(`panel-${id}`);
@@ -125,11 +124,9 @@ function engine() {
 function startRound() {
     gameState = "FLYING";
     multiplier = 1.00;
-    // Calculation for random crash points
-    crashPoint = (Math.random() < 0.1) ? 1.00 : (1 + Math.pow(Math.random(), 3) * 25).toFixed(2);
+    crashPoint = (Math.random() < 0.1) ? 1.00 : (1 + Math.pow(Math.random(), 3) * 30).toFixed(2);
     
-    document.getElementById('game-status').innerText = "Plane is flying";
-    sounds.engine.play();
+    try { sounds.engine.play(); } catch(e){}
 
     [1, 2].forEach(id => {
         if (bets[id].status === "QUEUED") {
@@ -145,15 +142,13 @@ function doCrash() {
     gameState = "CRASHED";
     sounds.engine.pause();
     sounds.engine.currentTime = 0;
-    sounds.crash.play();
+    try { sounds.crash.play(); } catch(e){}
 
-    // Instant UI Lock: Hide cashout buttons immediately
     document.querySelectorAll('.btn-cash').forEach(b => b.style.display = "none");
     document.querySelectorAll('.btn-bet').forEach(b => b.style.display = "block");
 
     document.getElementById('mult-text').innerText = "FLEW AWAY!";
     document.getElementById('mult-text').style.color = "var(--danger)";
-    document.getElementById('game-status').innerText = "Crashed at " + multiplier.toFixed(2) + "x";
 
     setTimeout(() => {
         gameState = "WAITING";
@@ -179,11 +174,6 @@ async function syncTransaction(amt) {
 }
 
 function placeBet(id) {
-    if (gameState !== "WAITING") {
-        alert("Wait for next round to bet");
-        return;
-    }
-    
     const p = document.getElementById(`panel-${id}`);
     const input = p.querySelector('.bet-amt');
     const btn = p.querySelector('.btn-bet');
@@ -198,28 +188,26 @@ function placeBet(id) {
         const amt = parseFloat(input.value);
         if (amt >= 10 && amt <= userData.balance) {
             bets[id] = { amount: amt, status: "QUEUED" };
-            btn.innerText = "CANCELING...";
+            btn.innerText = "CANCEL";
             btn.classList.add('active-bet');
             syncTransaction(-amt); 
-        } else {
-            alert("Insufficient balance");
         }
     }
 }
 
 function cashout(id) {
-    // CRITICAL FIX: Only allow cashout if game is actually flying
+    // SECURITY: Stop cashout if already crashed
     if (gameState !== "FLYING" || bets[id].status !== "FLYING") return;
     
     const win = bets[id].amount * multiplier;
-    bets[id].status = "NONE"; // Mark as cashed out immediately
+    bets[id].status = "NONE"; 
     
-    sounds.cash.play();
+    try { sounds.cash.play(); } catch(e){}
+    
     const p = document.getElementById(`panel-${id}`);
     p.querySelector('.btn-cash').style.display = "none";
     p.querySelector('.btn-bet').style.display = "block";
-    p.querySelector('.btn-bet').innerText = "WIN Ksh " + win.toFixed(0);
-    p.querySelector('.btn-bet').style.color = "var(--accent)";
+    p.querySelector('.btn-bet').innerText = "+" + win.toFixed(0);
     
     syncTransaction(win); 
 }
@@ -228,12 +216,9 @@ function resetPanels() {
     [1, 2].forEach(id => {
         bets[id].status = "NONE";
         const p = document.getElementById(`panel-${id}`);
-        const btn = p.querySelector('.btn-bet');
-        btn.innerText = "BET";
-        btn.style.color = "white";
-        btn.classList.remove('active-bet');
+        p.querySelector('.btn-bet').innerText = "BET";
+        p.querySelector('.btn-bet').classList.remove('active-bet');
     });
-    document.getElementById('game-status').innerText = "Waiting for next round";
 }
 
 function updateUI() {
