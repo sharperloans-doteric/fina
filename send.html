@@ -30,7 +30,6 @@
         #mult-text { font-size: 3.5rem; font-weight: 900; z-index: 5; transition: transform 0.1s ease; }
         .status-badge { position: absolute; top: 15px; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 5px; font-size: 0.75rem; color: #888; text-transform: uppercase; }
 
-        /* Animation Background */
         canvas { position: absolute; width: 100%; height: 100%; opacity: 0.6; }
 
         /* Betting Section */
@@ -50,7 +49,6 @@
         .btn-bet { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); }
         .btn-bet.active-bet { background: #333; color: #888; }
         
-        /* Dynamic Cashout Button */
         .btn-cashout { 
             background: var(--accent); color: black; display: none; 
             flex-direction: column; line-height: 1.2;
@@ -93,18 +91,16 @@
     </div>
 
 <script>
-// Logic Configuration
 const API = "https://funds-mauve.vercel.app/api";
 let userData = JSON.parse(localStorage.getItem('mledger_user')) || { balance: 0, phone: "000" };
 
-// Global States
-let state = "WAITING"; // WAITING, FLYING, CRASHED
+let state = "WAITING"; 
 let multiplier = 1.00;
 let crashPoint = 0;
 let countdown = 5.0;
 let currentBet = 0;
-let isSubscribed = false; // Is the user in the current flying round?
-let hasQueuedBet = false; // Is there a bet waiting for the next round?
+let isSubscribed = false; 
+let hasQueuedBet = false; 
 
 const dom = {
     bal: document.getElementById('user-bal'),
@@ -117,12 +113,16 @@ const dom = {
     msg: document.getElementById('game-msg')
 };
 
+function saveAndSync() {
+    localStorage.setItem('mledger_user', JSON.stringify(userData));
+    syncWithServer();
+}
+
 function refreshBalance() {
     dom.bal.innerText = userData.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
 }
 refreshBalance();
 
-// Main Engine Loop (runs 60fps)
 function engine() {
     if (state === "WAITING") {
         countdown -= 0.016;
@@ -135,12 +135,11 @@ function engine() {
         }
     } 
     else if (state === "FLYING") {
-        multiplier += (multiplier * 0.006); // Speed curve
+        multiplier += (multiplier * 0.006);
         dom.mult.innerText = multiplier.toFixed(2) + "x";
         dom.mult.style.color = "white";
         dom.status.innerText = "Flying...";
         
-        // Update Cashout Button Value
         if (isSubscribed) {
             const liveWin = currentBet * multiplier;
             dom.cashVal.innerText = "Ksh " + liveWin.toFixed(2);
@@ -156,7 +155,6 @@ function engine() {
 function startFlying() {
     state = "FLYING";
     multiplier = 1.00;
-    // Calculation: 10% chance of instant crash at 1.00x, else random
     crashPoint = Math.random() < 0.1 ? 1.00 : (1 + Math.pow(Math.random(), 2) * 10).toFixed(2);
     
     if (hasQueuedBet) {
@@ -176,10 +174,9 @@ function triggerCrash() {
     if (isSubscribed) {
         dom.msg.innerText = "Flew away! Lost Ksh " + currentBet;
         isSubscribed = false;
-        syncWithServer();
+        // No need to sync here because money was already deducted when placing bet
     }
 
-    // Reset after 3 seconds
     setTimeout(() => {
         state = "WAITING";
         countdown = 5.0;
@@ -192,28 +189,29 @@ function triggerCrash() {
     }, 3000);
 }
 
-// User Actions
 dom.betBtn.addEventListener('click', () => {
     if (hasQueuedBet) {
-        // Cancel bet
+        // Cancel bet: Return money to user
         userData.balance += currentBet;
         hasQueuedBet = false;
         currentBet = 0;
         dom.betBtn.innerText = "PLACE BET";
         dom.betBtn.classList.remove('active-bet');
         refreshBalance();
+        saveAndSync(); // Sync cancellation to backend
         return;
     }
 
     const amt = parseFloat(dom.input.value);
     if (amt >= 10 && amt <= userData.balance) {
         currentBet = amt;
-        userData.balance -= amt;
+        userData.balance -= amt; // Deduct locally
         hasQueuedBet = true;
         dom.betBtn.innerText = "CANCEL (Ksh " + amt + ")";
         dom.betBtn.classList.add('active-bet');
         dom.msg.innerText = "Bet accepted for next round";
         refreshBalance();
+        saveAndSync(); // Deduct on backend immediately
     } else {
         dom.msg.innerText = "Check balance / Min bet 10";
     }
@@ -236,21 +234,23 @@ dom.cashBtn.addEventListener('click', () => {
     setTimeout(() => { dom.betBtn.disabled = false; dom.betBtn.innerText = "PLACE BET"; }, 2000);
     
     refreshBalance();
-    localStorage.setItem('mledger_user', JSON.stringify(userData));
-    syncWithServer();
+    saveAndSync(); // Sync the win to backend
 });
 
 async function syncWithServer() {
     try {
-        await fetch(`${API}/update`, {
+        const response = await fetch(`${API}/update`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({ phone: userData.phone, balance: userData.balance })
         });
-    } catch(e) { console.warn("Background sync failed"); }
+        const data = await response.json();
+        console.log("Backend Synced:", data);
+    } catch(e) { 
+        console.warn("Sync failed, will retry next action"); 
+    }
 }
 
-// Kickstart Engine
 engine();
 </script>
 </body>
