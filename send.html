@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,7 +18,6 @@
         .header { width: 100%; max-width: 600px; display: flex; justify-content: space-between; padding: 10px; }
         .bal-pill { background: #222; padding: 8px 15px; border-radius: 20px; color: var(--primary); font-weight: bold; border: 1px solid #444; }
 
-        /* Screen */
         .display-screen { 
             width: 100%; max-width: 600px; height: 250px; background: radial-gradient(circle, #111 0%, #000 100%);
             border-radius: 15px; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -27,7 +25,6 @@
         }
         #mult-text { font-size: 4rem; font-weight: 900; z-index: 10; text-shadow: 0 0 20px rgba(255,171,0,0.4); }
 
-        /* Betting Area - Two Columns */
         .bet-container { 
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 600px; margin-top: 15px; 
         }
@@ -74,47 +71,38 @@
         </div>
     </div>
 
-    <p id="msg" style="color:#666; font-size:0.8rem; margin-top:10px;">Good Luck!</p>
+    <p id="msg" style="color:#666; font-size:0.8rem; margin-top:10px;">Backend Synced: /api/fund</p>
 
 <script>
-// --- AUDIO SYSTEM ---
 const sounds = {
-    engine: new Audio('https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3'), // Wind/Engine loop
-    cash: new Audio('https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3'),   // Success
-    crash: new Audio('https://assets.mixkit.co/active_storage/sfx/2533/2533-preview.mp3')   // Explosion
+    engine: new Audio('https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3'),
+    cash: new Audio('https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3'),
+    crash: new Audio('https://assets.mixkit.co/active_storage/sfx/2533/2533-preview.mp3')
 };
 sounds.engine.loop = true;
 
-// --- STATE MANAGEMENT ---
-const API = "https://funds-mauve.vercel.app/api";
-let userData = JSON.parse(localStorage.getItem('mledger_user')) || { balance: 5000, phone: "000" };
+const FUND_API = "https://funds-mauve.vercel.app/api/fund";
+let userData = JSON.parse(localStorage.getItem('mledger_user')) || { balance: 0, phone: "000" };
 let gameState = "WAITING";
 let multiplier = 1.00;
 let crashPoint = 0;
 let countdown = 5.0;
 
 let bets = {
-    1: { amount: 0, status: "NONE" }, // NONE, QUEUED, FLYING
+    1: { amount: 0, status: "NONE" },
     2: { amount: 0, status: "NONE" }
 };
 
-// --- CORE ENGINE ---
 function engine() {
     if (gameState === "WAITING") {
         countdown -= 0.016;
         document.getElementById('mult-text').innerText = countdown.toFixed(1) + "s";
-        document.getElementById('mult-text').style.color = "var(--accent)";
         if (countdown <= 0) startRound();
     } 
     else if (gameState === "FLYING") {
-        multiplier += (multiplier * 0.0065);
+        multiplier += (multiplier * 0.007);
         document.getElementById('mult-text').innerText = multiplier.toFixed(2) + "x";
-        document.getElementById('mult-text').style.color = "white";
         
-        // Adjust engine pitch based on multiplier
-        sounds.engine.playbackRate = Math.min(2, 1 + (multiplier / 10));
-
-        // Update Cashout Buttons
         [1, 2].forEach(id => {
             if (bets[id].status === "FLYING") {
                 const p = document.getElementById(`panel-${id}`);
@@ -130,8 +118,7 @@ function engine() {
 function startRound() {
     gameState = "FLYING";
     multiplier = 1.00;
-    crashPoint = (Math.random() < 0.1) ? 1.00 : (1 + Math.pow(Math.random(), 2) * 15).toFixed(2);
-    
+    crashPoint = (Math.random() < 0.1) ? 1.00 : (1 + Math.pow(Math.random(), 2) * 12).toFixed(2);
     sounds.engine.play();
 
     [1, 2].forEach(id => {
@@ -149,57 +136,71 @@ function doCrash() {
     sounds.engine.pause();
     sounds.engine.currentTime = 0;
     sounds.crash.play();
-
     document.getElementById('mult-text').style.color = "var(--danger)";
-    document.getElementById('game-status').innerText = "FLEW AWAY";
 
     setTimeout(() => {
         gameState = "WAITING";
         countdown = 5.0;
-        document.getElementById('game-status').innerText = "NEXT ROUND";
         resetPanels();
     }, 3000);
 }
 
-// --- ACTIONS ---
+// --- UPDATED BACKEND SYNC ---
+async function syncTransaction(amt) {
+    try {
+        const response = await fetch(FUND_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                phone: userData.phone, 
+                amount: amt // Negative for stake, Positive for win
+            })
+        });
+        const data = await response.json();
+        if(data.newBalance) {
+            userData.balance = data.newBalance;
+            updateUI();
+            localStorage.setItem('mledger_user', JSON.stringify(userData));
+        }
+    } catch(e) { console.error("Database sync failed"); }
+}
+
 function placeBet(id) {
     const p = document.getElementById(`panel-${id}`);
     const input = p.querySelector('.bet-amt');
     const btn = p.querySelector('.btn-bet');
 
     if (bets[id].status === "QUEUED") {
-        userData.balance += bets[id].amount;
+        // Cancel: Refund money
+        const refund = bets[id].amount;
         bets[id].status = "NONE";
         btn.innerText = "PLACE BET";
         btn.classList.remove('active-bet');
+        syncTransaction(refund); // Add back to DB
     } else {
         const amt = parseFloat(input.value);
         if (amt >= 10 && amt <= userData.balance) {
-            userData.balance -= amt;
             bets[id] = { amount: amt, status: "QUEUED" };
             btn.innerText = "CANCEL (Ksh " + amt + ")";
             btn.classList.add('active-bet');
+            syncTransaction(-amt); // Deduct from DB
         }
     }
-    updateUI();
-    saveAndSync();
 }
 
 function cashout(id) {
     if (bets[id].status !== "FLYING") return;
     
     const win = bets[id].amount * multiplier;
-    userData.balance += win;
     bets[id].status = "NONE";
     
     sounds.cash.play();
     const p = document.getElementById(`panel-${id}`);
     p.querySelector('.btn-cash').style.display = "none";
     p.querySelector('.btn-bet').style.display = "block";
-    p.querySelector('.btn-bet').innerText = "CASHOUT SUCCESS";
+    p.querySelector('.btn-bet').innerText = "SUCCESS";
     
-    updateUI();
-    saveAndSync();
+    syncTransaction(win); // Add win to DB
 }
 
 function resetPanels() {
@@ -210,22 +211,12 @@ function resetPanels() {
         p.querySelector('.btn-bet').innerText = "PLACE BET";
         p.querySelector('.btn-bet').classList.remove('active-bet');
         p.querySelector('.btn-cash').style.display = "none";
+        document.getElementById('mult-text').style.color = "var(--accent)";
     });
 }
 
 function updateUI() {
-    document.getElementById('user-bal').innerText = userData.balance.toFixed(2);
-}
-
-async function saveAndSync() {
-    localStorage.setItem('mledger_user', JSON.stringify(userData));
-    try {
-        await fetch(`${API}/update`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ phone: userData.phone, balance: userData.balance })
-        });
-    } catch(e) { console.log("Sync delay"); }
+    document.getElementById('user-bal').innerText = userData.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
 }
 
 updateUI();
