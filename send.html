@@ -4,253 +4,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M-Crash LIVE - Real-time</title>
+    <title>M-Crash PRO - Dual Stake</title>
     <style>
         :root {
             --primary: #28a745;
             --danger: #ff4757;
             --dark: #000000;
-            --card: #121212;
+            --card: #1a1a1a;
             --accent: #ffab00;
         }
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: var(--dark); color: white; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        * { box-sizing: border-box; font-family: sans-serif; }
+        body { background: var(--dark); color: white; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
 
-        /* Balance & Stats */
-        .header { width: 100%; max-width: 480px; display: flex; justify-content: space-between; align-items: center; padding: 15px 5px; }
-        .bal-pill { background: #1a1a1a; padding: 10px 18px; border-radius: 30px; border: 1px solid #333; font-weight: 700; }
-        .bal-pill span { color: var(--primary); }
+        .header { width: 100%; max-width: 600px; display: flex; justify-content: space-between; padding: 10px; }
+        .bal-pill { background: #222; padding: 8px 15px; border-radius: 20px; color: var(--primary); font-weight: bold; border: 1px solid #444; }
 
-        /* Display Screen */
+        /* Screen */
         .display-screen { 
-            width: 100%; max-width: 480px; height: 280px; background: #050505; 
-            border-radius: 20px; position: relative; overflow: hidden; border: 1px solid #222;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            width: 100%; max-width: 600px; height: 250px; background: radial-gradient(circle, #111 0%, #000 100%);
+            border-radius: 15px; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border: 2px solid #333; overflow: hidden;
         }
-        #mult-text { font-size: 3.5rem; font-weight: 900; z-index: 5; transition: transform 0.1s ease; }
-        .status-badge { position: absolute; top: 15px; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 5px; font-size: 0.75rem; color: #888; text-transform: uppercase; }
+        #mult-text { font-size: 4rem; font-weight: 900; z-index: 10; text-shadow: 0 0 20px rgba(255,171,0,0.4); }
 
-        canvas { position: absolute; width: 100%; height: 100%; opacity: 0.6; }
+        /* Betting Area - Two Columns */
+        .bet-container { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 600px; margin-top: 15px; 
+        }
+        .bet-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid #333; }
+        input { width: 100%; background: #000; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 1.1rem; }
+        
+        button { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-bet { background: var(--primary); color: white; }
+        .btn-cash { background: var(--accent); color: black; display: none; flex-direction: column; }
+        .active-bet { background: #444; color: #999; }
 
-        /* Betting Section */
-        .bet-box { 
-            width: 100%; max-width: 480px; background: var(--card); 
-            margin-top: 15px; padding: 20px; border-radius: 20px; border: 1px solid #222;
-        }
-        .input-group { position: relative; margin-bottom: 12px; }
-        input { 
-            width: 100%; background: #000; border: 1px solid #333; 
-            color: white; padding: 18px; border-radius: 12px; font-size: 1.2rem; outline: none;
-        }
-        button { 
-            width: 100%; padding: 18px; border-radius: 12px; border: none; 
-            font-weight: 800; font-size: 1.1rem; cursor: pointer; transition: 0.2s;
-        }
-        .btn-bet { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); }
-        .btn-bet.active-bet { background: #333; color: #888; }
-        
-        .btn-cashout { 
-            background: var(--accent); color: black; display: none; 
-            flex-direction: column; line-height: 1.2;
-        }
-        .btn-cashout small { font-size: 0.7rem; opacity: 0.8; font-weight: 600; }
-        .btn-cashout span { font-size: 1.3rem; }
-        
-        .msg-log { margin-top: 10px; font-size: 0.85rem; color: #666; height: 20px; }
+        @media (max-width: 500px) { .bet-container { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div style="font-weight: 900; color: #eee;">M-CRASH</div>
+        <div style="font-weight:900;">M-CRASH PRO</div>
         <div class="bal-pill">Ksh <span id="user-bal">0.00</span></div>
     </div>
 
     <div class="display-screen">
-        <div class="status-badge" id="game-status">Live Engine</div>
-        <canvas id="bg-canvas"></canvas>
-        <div id="mult-text" style="color: var(--accent);">Waiting...</div>
+        <div id="game-status" style="position:absolute; top:10px; color:#666; font-size:0.8rem;">READY</div>
+        <div id="mult-text" style="color: var(--accent);">WAITING</div>
     </div>
 
-    <div class="msg-log" id="game-msg">Ready to play</div>
-
-    <div class="bet-box">
-        <div class="input-group">
-            <input type="number" id="bet-amt" placeholder="Amount (Min 10)">
+    <div class="bet-container">
+        <div class="bet-box" id="panel-1">
+            <input type="number" class="bet-amt" placeholder="Amount" value="10">
+            <button class="btn-bet" onclick="placeBet(1)">PLACE BET</button>
+            <button class="btn-cash" onclick="cashout(1)">
+                <small>CASHOUT</small>
+                <span class="cash-val">0.00</span>
+            </button>
         </div>
-        <button id="bet-btn" class="btn-bet">PLACE BET</button>
-        <button id="cash-btn" class="btn-cashout">
-            <small>CASHOUT</small>
-            <span id="cash-val">Ksh 0.00</span>
-        </button>
+
+        <div class="bet-box" id="panel-2">
+            <input type="number" class="bet-amt" placeholder="Amount" value="10">
+            <button class="btn-bet" onclick="placeBet(2)">PLACE BET</button>
+            <button class="btn-cash" onclick="cashout(2)">
+                <small>CASHOUT</small>
+                <span class="cash-val">0.00</span>
+            </button>
+        </div>
     </div>
 
-    <div style="margin-top:20px; display:flex; gap:10px; width:100%; max-width:480px;">
-        <button onclick="location.href='deposit.html'" style="background:#1a1a1a; font-size:0.8rem; padding:10px; color:#aaa;">DEPOSIT</button>
-        <button onclick="location.href='withdraw.html'" style="background:#1a1a1a; font-size:0.8rem; padding:10px; color:#aaa;">WITHDRAW</button>
-    </div>
+    <p id="msg" style="color:#666; font-size:0.8rem; margin-top:10px;">Good Luck!</p>
 
 <script>
-const API = "https://funds-mauve.vercel.app/api";
-let userData = JSON.parse(localStorage.getItem('mledger_user')) || { balance: 0, phone: "000" };
+// --- AUDIO SYSTEM ---
+const sounds = {
+    engine: new Audio('https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3'), // Wind/Engine loop
+    cash: new Audio('https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3'),   // Success
+    crash: new Audio('https://assets.mixkit.co/active_storage/sfx/2533/2533-preview.mp3')   // Explosion
+};
+sounds.engine.loop = true;
 
-let state = "WAITING"; 
+// --- STATE MANAGEMENT ---
+const API = "https://funds-mauve.vercel.app/api";
+let userData = JSON.parse(localStorage.getItem('mledger_user')) || { balance: 5000, phone: "000" };
+let gameState = "WAITING";
 let multiplier = 1.00;
 let crashPoint = 0;
 let countdown = 5.0;
-let currentBet = 0;
-let isSubscribed = false; 
-let hasQueuedBet = false; 
 
-const dom = {
-    bal: document.getElementById('user-bal'),
-    mult: document.getElementById('mult-text'),
-    status: document.getElementById('game-status'),
-    betBtn: document.getElementById('bet-btn'),
-    cashBtn: document.getElementById('cash-btn'),
-    cashVal: document.getElementById('cash-val'),
-    input: document.getElementById('bet-amt'),
-    msg: document.getElementById('game-msg')
+let bets = {
+    1: { amount: 0, status: "NONE" }, // NONE, QUEUED, FLYING
+    2: { amount: 0, status: "NONE" }
 };
 
-function saveAndSync() {
-    localStorage.setItem('mledger_user', JSON.stringify(userData));
-    syncWithServer();
-}
-
-function refreshBalance() {
-    dom.bal.innerText = userData.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
-}
-refreshBalance();
-
+// --- CORE ENGINE ---
 function engine() {
-    if (state === "WAITING") {
+    if (gameState === "WAITING") {
         countdown -= 0.016;
-        dom.mult.innerText = countdown.toFixed(1) + "s";
-        dom.mult.style.color = "var(--accent)";
-        dom.status.innerText = "Next Round In";
-        
-        if (countdown <= 0) {
-            startFlying();
-        }
+        document.getElementById('mult-text').innerText = countdown.toFixed(1) + "s";
+        document.getElementById('mult-text').style.color = "var(--accent)";
+        if (countdown <= 0) startRound();
     } 
-    else if (state === "FLYING") {
-        multiplier += (multiplier * 0.006);
-        dom.mult.innerText = multiplier.toFixed(2) + "x";
-        dom.mult.style.color = "white";
-        dom.status.innerText = "Flying...";
+    else if (gameState === "FLYING") {
+        multiplier += (multiplier * 0.0065);
+        document.getElementById('mult-text').innerText = multiplier.toFixed(2) + "x";
+        document.getElementById('mult-text').style.color = "white";
         
-        if (isSubscribed) {
-            const liveWin = currentBet * multiplier;
-            dom.cashVal.innerText = "Ksh " + liveWin.toFixed(2);
-        }
+        // Adjust engine pitch based on multiplier
+        sounds.engine.playbackRate = Math.min(2, 1 + (multiplier / 10));
 
-        if (multiplier >= crashPoint) {
-            triggerCrash();
-        }
+        // Update Cashout Buttons
+        [1, 2].forEach(id => {
+            if (bets[id].status === "FLYING") {
+                const p = document.getElementById(`panel-${id}`);
+                p.querySelector('.cash-val').innerText = "Ksh " + (bets[id].amount * multiplier).toFixed(2);
+            }
+        });
+
+        if (multiplier >= crashPoint) doCrash();
     }
     requestAnimationFrame(engine);
 }
 
-function startFlying() {
-    state = "FLYING";
+function startRound() {
+    gameState = "FLYING";
     multiplier = 1.00;
-    crashPoint = Math.random() < 0.1 ? 1.00 : (1 + Math.pow(Math.random(), 2) * 10).toFixed(2);
+    crashPoint = (Math.random() < 0.1) ? 1.00 : (1 + Math.pow(Math.random(), 2) * 15).toFixed(2);
     
-    if (hasQueuedBet) {
-        isSubscribed = true;
-        hasQueuedBet = false;
-        dom.betBtn.style.display = "none";
-        dom.cashBtn.style.display = "flex";
-    }
+    sounds.engine.play();
+
+    [1, 2].forEach(id => {
+        if (bets[id].status === "QUEUED") {
+            bets[id].status = "FLYING";
+            const p = document.getElementById(`panel-${id}`);
+            p.querySelector('.btn-bet').style.display = "none";
+            p.querySelector('.btn-cash').style.display = "flex";
+        }
+    });
 }
 
-function triggerCrash() {
-    state = "CRASHED";
-    dom.mult.innerText = multiplier.toFixed(2) + "x";
-    dom.mult.style.color = "var(--danger)";
-    dom.status.innerText = "Crashed";
-    
-    if (isSubscribed) {
-        dom.msg.innerText = "Flew away! Lost Ksh " + currentBet;
-        isSubscribed = false;
-        // No need to sync here because money was already deducted when placing bet
-    }
+function doCrash() {
+    gameState = "CRASHED";
+    sounds.engine.pause();
+    sounds.engine.currentTime = 0;
+    sounds.crash.play();
+
+    document.getElementById('mult-text').style.color = "var(--danger)";
+    document.getElementById('game-status').innerText = "FLEW AWAY";
 
     setTimeout(() => {
-        state = "WAITING";
+        gameState = "WAITING";
         countdown = 5.0;
-        multiplier = 1.00;
-        dom.betBtn.style.display = "block";
-        dom.betBtn.innerText = "PLACE BET";
-        dom.betBtn.classList.remove('active-bet');
-        dom.cashBtn.style.display = "none";
-        dom.msg.innerText = "Ready for new round";
+        document.getElementById('game-status').innerText = "NEXT ROUND";
+        resetPanels();
     }, 3000);
 }
 
-dom.betBtn.addEventListener('click', () => {
-    if (hasQueuedBet) {
-        // Cancel bet: Return money to user
-        userData.balance += currentBet;
-        hasQueuedBet = false;
-        currentBet = 0;
-        dom.betBtn.innerText = "PLACE BET";
-        dom.betBtn.classList.remove('active-bet');
-        refreshBalance();
-        saveAndSync(); // Sync cancellation to backend
-        return;
-    }
+// --- ACTIONS ---
+function placeBet(id) {
+    const p = document.getElementById(`panel-${id}`);
+    const input = p.querySelector('.bet-amt');
+    const btn = p.querySelector('.btn-bet');
 
-    const amt = parseFloat(dom.input.value);
-    if (amt >= 10 && amt <= userData.balance) {
-        currentBet = amt;
-        userData.balance -= amt; // Deduct locally
-        hasQueuedBet = true;
-        dom.betBtn.innerText = "CANCEL (Ksh " + amt + ")";
-        dom.betBtn.classList.add('active-bet');
-        dom.msg.innerText = "Bet accepted for next round";
-        refreshBalance();
-        saveAndSync(); // Deduct on backend immediately
+    if (bets[id].status === "QUEUED") {
+        userData.balance += bets[id].amount;
+        bets[id].status = "NONE";
+        btn.innerText = "PLACE BET";
+        btn.classList.remove('active-bet');
     } else {
-        dom.msg.innerText = "Check balance / Min bet 10";
+        const amt = parseFloat(input.value);
+        if (amt >= 10 && amt <= userData.balance) {
+            userData.balance -= amt;
+            bets[id] = { amount: amt, status: "QUEUED" };
+            btn.innerText = "CANCEL (Ksh " + amt + ")";
+            btn.classList.add('active-bet');
+        }
     }
-});
+    updateUI();
+    saveAndSync();
+}
 
-dom.cashBtn.addEventListener('click', () => {
-    if (!isSubscribed) return;
+function cashout(id) {
+    if (bets[id].status !== "FLYING") return;
     
-    const finalWin = currentBet * multiplier;
-    userData.balance += finalWin;
-    isSubscribed = false;
+    const win = bets[id].amount * multiplier;
+    userData.balance += win;
+    bets[id].status = "NONE";
     
-    dom.cashBtn.style.display = "none";
-    dom.betBtn.style.display = "block";
-    dom.betBtn.innerText = "WAITING...";
-    dom.betBtn.disabled = true;
+    sounds.cash.play();
+    const p = document.getElementById(`panel-${id}`);
+    p.querySelector('.btn-cash').style.display = "none";
+    p.querySelector('.btn-bet').style.display = "block";
+    p.querySelector('.btn-bet').innerText = "CASHOUT SUCCESS";
     
-    dom.msg.innerHTML = `<span style="color:var(--primary)">SUCCESS! +Ksh ${finalWin.toFixed(2)}</span>`;
-    
-    setTimeout(() => { dom.betBtn.disabled = false; dom.betBtn.innerText = "PLACE BET"; }, 2000);
-    
-    refreshBalance();
-    saveAndSync(); // Sync the win to backend
-});
+    updateUI();
+    saveAndSync();
+}
 
-async function syncWithServer() {
+function resetPanels() {
+    [1, 2].forEach(id => {
+        bets[id].status = "NONE";
+        const p = document.getElementById(`panel-${id}`);
+        p.querySelector('.btn-bet').style.display = "block";
+        p.querySelector('.btn-bet').innerText = "PLACE BET";
+        p.querySelector('.btn-bet').classList.remove('active-bet');
+        p.querySelector('.btn-cash').style.display = "none";
+    });
+}
+
+function updateUI() {
+    document.getElementById('user-bal').innerText = userData.balance.toFixed(2);
+}
+
+async function saveAndSync() {
+    localStorage.setItem('mledger_user', JSON.stringify(userData));
     try {
-        const response = await fetch(`${API}/update`, {
+        await fetch(`${API}/update`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({ phone: userData.phone, balance: userData.balance })
         });
-        const data = await response.json();
-        console.log("Backend Synced:", data);
-    } catch(e) { 
-        console.warn("Sync failed, will retry next action"); 
-    }
+    } catch(e) { console.log("Sync delay"); }
 }
 
+updateUI();
 engine();
 </script>
 </body>
